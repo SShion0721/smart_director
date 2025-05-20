@@ -17,9 +17,8 @@
 // 最高管理员设置 (在此填入你的 SteamID)
 // 格式必须是 STEAM_1:x:xxxxxxx
 #define SUPER_ADMIN_STEAMID "STEAM_0:0:814326156"
-#define PERMANENT_VICTIM    "STEAM_1:0:560277037"    // [新增] 永久受害者 SteamID（可选，设为 "" 则不启用）
+#define PERMANENT_VICTIM    "STEAM_1:0:560277037"    // 永久受害者 SteamID（可选，设为 "" 则不启用）
 
-// [全局变量]
 ConVar g_cvGriefPermanentEnv;    // 常驻倒霉蛋功能的总开关
 #define TEAM_SURVIVOR         2
 #define TEAM_INFECTED         3
@@ -34,7 +33,7 @@ ConVar g_cvGriefPermanentEnv;    // 常驻倒霉蛋功能的总开关
 
 #define PATH_NO_BUILD_PENALTY 1999.0
 
-// [新增] 恶搞名单系统
+// 恶搞名单系统
 ArrayList g_hGriefTargets;
 char      g_sGriefFilePath[PLATFORM_MAX_PATH];
 
@@ -42,9 +41,7 @@ char      g_sGriefFilePath[PLATFORM_MAX_PATH];
 int       g_iPendingSI[MAXPLAYERS + 1];    // 记录每种类型的在途数量（如果需要细分）
 int       g_iTotalPending = 0;             // 总在途数量
 
-// =========================================================================
-// [极速优化模块] 宏定义与查表法
-// =========================================================================
+// 宏定义与查表法
 
 // 1. 基础校验宏 (编译时直接替换，消除函数调用开销)
 #define IsValidClient(% 1)   (% 1 > 0 && % 1 <= MaxClients && IsClientInGame(% 1))
@@ -63,7 +60,7 @@ static int  g_ProbMobFront[101];       // 前方尸潮概率表 (0-100%)
 static char g_sLogicCachePath[PLATFORM_MAX_PATH] = "";
 static bool g_bLogicReady                        = false;
 
-// [参数配置] 你可以在这里调整“导演剧本”的强度
+// 你可以在这里调整“导演剧本”的强度
 #define LOGIC_CURVE_EXP   2.5     // 指数: 越高，前期越轻松，后期压力陡增
 #define LOGIC_BASE_CHANCE 5.0     // 起步: 出门就有 5% 概率全控
 #define LOGIC_MAX_CHANCE  90.0    // 终点: 终点前有 90% 概率全控
@@ -71,23 +68,23 @@ static bool g_bLogicReady                        = false;
 // 3. 特感名称查表数组 (替代 Switch-Case)
 char      g_sClassNames[][] = { "Unknown", "Smoker", "Boomer", "Hunter", "Spitter", "Jockey", "Charger", "Witch", "Tank" };
 
-// --- [优化] 位掩码 (Bitmask) ---
+// --- 位掩码 (Bitmask) ---
 int       g_iSurvivorMask   = 0;
-int       g_iInfectedMask   = 0;    // [新增] 存活特感掩码 (不含Tank)
+int       g_iInfectedMask   = 0;    // 存活特感掩码 (不含Tank)
 int       g_iSpawnGhosts[10];
 int       g_iCachedBestTarget  = -1;    // 全局缓存目标
 
-// [新增] 终点绝杀拌线触发标记
+// 终点绝杀拌线触发标记
 bool      g_bTerminalIntercept = false;
-// [新增] 上次尸潮触发时间
+// 上次尸潮触发时间
 float     g_fLastMobTime       = 0.0;
 
-// [新增] 用于标记是否正在由插件控制生成 (用于 Hook 判定)
+// 用于标记是否正在由插件控制生成 (用于 Hook 判定)
 bool      g_bIsPluginSpawning  = false;
 
 ConVar    g_cvPhantomMaxSounds;    // 一次最多同时播放几条声音
 
-// --- CVars ---
+// --- 控制台设定 ---
 ConVar    g_cvMaxSI;
 ConVar    g_cvSpawnDistMin;
 ConVar    g_cvSpawnDistMax;
@@ -95,7 +92,7 @@ ConVar    g_cvEnableTankControl;
 ConVar    g_cvCullDistance;
 ConVar    g_cvDebugMode;
 ConVar    g_cvHungerCooldown;    // 补特冷却
-ConVar    g_cvLimitBatchHalf;    // [新] 半数限制开关
+ConVar    g_cvLimitBatchHalf;    // 半数限制开关
 ConVar    g_cvCheckVis;
 ConVar    g_cvmobcooldown;
 ConVar    g_cvTankChance;
@@ -110,7 +107,7 @@ int       g_iCapSpitter = 2;
 int       g_iCapJockey  = 6;
 int       g_iCapCharger = 8;
 
-// [新增] 难度档位与 Tank 尸潮计时器
+// 难度档位与 Tank 尸潮计时器
 ConVar    g_cvDifficultyTier;
 float     g_fLastTankMobTime = 0.0;
 ConVar    g_cvPhantomChance;
@@ -130,7 +127,7 @@ float     g_fOriginalMaxDist;             // 用于还原距离
 Handle    g_hPanicEndTimer  = null;       // 用于自动结束尸潮状态
 
 float     g_fNextTankTime   = 0.0;
-float     g_fLastSupplyTime = 0.0;    // [修复] 上次补货时间戳
+float     g_fLastSupplyTime = 0.0;    // 上次补货时间戳
 bool      g_bLateLoad       = false;
 bool      g_bLeftSafeArea   = false;
 float     fPathCacheQuantize;
@@ -145,16 +142,14 @@ bool      g_bIsBiled[MAXPLAYERS + 1];
 float     g_fSpawnTime[MAXPLAYERS + 1];
 
 // --- 状态控制 ---
-bool      g_bForceMobFront = false;    // [新增] 是否强制尸潮刷在前方
+bool      g_bForceMobFront = false;    // 是否强制尸潮刷在前方
 
-// --- [优化] 高性能状态缓存 (O(1) Access) ---
+// --- 高性能状态缓存 (O(1) Access) ---
 int       g_iCachedTeam[MAXPLAYERS + 1];
 bool      g_bCachedAlive[MAXPLAYERS + 1];
 bool      g_bCachedInGame[MAXPLAYERS + 1];
 
-// ==========================================
-// [新增] 随机幻听定时器变量
-// ==========================================
+// 随机幻听定时器变量
 ConVar    g_cvPhantomIntervalMin;
 ConVar    g_cvPhantomIntervalMax;
 Handle    g_hPhantomTimer = null;
@@ -165,7 +160,7 @@ enum struct SurPosData
     float fPos[3];
 }
 
-// [ADD] 单次最终入选刷点的评分快照（只打印最终点）
+// 单次最终入选刷点的评分快照（只打印最终点）
 enum struct SpawnScoreDbg
 {
     float total;
@@ -231,7 +226,7 @@ int              iSiLimit;
 // —— 分散度四件套参数 —— //
 #define PI                 3.1415926535
 #define SEP_TTL            3.0    // 最近刷点保留秒数
-//#define SEP_MAX                   20     // 记录上限（防止无限增长）
+// #define SEP_MAX                   20     // 记录上限（防止无限增长）
 // === Dispersion tuning (lighter penalties) ===
 #define SEP_RADIUS         80.0
 #define NAV_CD_SECS        0.5
@@ -244,7 +239,7 @@ int              iSiLimit;
 #define PEN_LIMIT_MINL     1
 #define PEN_LIMIT_MAXL     16
 
-ArrayList lastSpawns = null;    // 每条记录 [x,y,z,time]
+ArrayList lastSpawns = null;    // 每条记录
 
 #define RING_SLACK 350.0
 
@@ -254,9 +249,7 @@ bool      bSurFlowFallback;
 float     fSurFlowFallbackTTL;
 
 float     g_fMapMaxFlow = 0.0;    // 地图最大 Flow 距离（用于归一化百分比）
-// =========================
 // 修改 TheNavAreas methodmap
-// =========================
 methodmap TheNavAreas
 {
     // 使用 left4dhooks 的 L4D_GetAllNavAreas 替代
@@ -274,9 +267,7 @@ public     Address GetAreaByIndex(int i)
         return g_AllNavAreasCache.Get(i);
     }
 }
-// =========================
 // 修改 NavArea methodmap
-// =========================
 methodmap NavArea
 {
 
@@ -334,7 +325,7 @@ enum
     TERROR_NAV_DOOR              = 1 << 18,
     TERROR_NAV_NOTHREAT          = 1 << 19
 }
-// [新增] —— PathPenalty_NoBuild 结果缓存（key -> result / expire）
+// —— PathPenalty_NoBuild 结果缓存（key -> result / expire）
 static StringMap g_PathCacheRes = null;    // key -> int(0/1)
 
 enum SIClass
@@ -356,12 +347,10 @@ public Plugin myinfo =
     author      = "Sion Gemini",
     description = "No Warnings + Bitwise Optimized",
     version     = "22.0",
-    url         = "https://steamcommunity.com/profiles/76561199209427576"
+    url         = "https:// steamcommunity.com/profiles/76561199209427576"
 };
 
-// =========================================================================
-// 对外提供的原生API接口
-// =========================================================================
+// 对外提供的原生接口接口
 // 思路：插件加载时注册这些原生函数，供外部其他插件调用并实时控制导演参数
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
@@ -374,7 +363,7 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
     CreateNative("SD_API_SetSuperMode", Native_SetSuperMode);
 
     CreateNative("SD_API_SetCullDistance", Native_SetCullDistance);
-    // CreateNative("SD_API_SetSpawnStrategy", Native_SetSpawnStrategy);
+    // Create原生函数("SD_接口_SetSpawnStrategy", 原生函数_SetSpawnStrategy);
     RegPluginLibrary("smart_director");
     return APLRes_Success;
 }
@@ -415,21 +404,21 @@ public int Native_SetCullDistance(Handle plugin, int numParams)
     return 1;
 }
 
-// [新增] 设置刷怪策略 API
-// public int Native_SetSpawnStrategy(Handle plugin, int numParams)
+// 设置刷怪策略 接口
+// public int 原生函数_SetSpawnStrategy(Handle plugin, int numParams)
 // {
-//     int mode = GetNativeCell(1);
-//     if (mode < 0) mode = 0;
-//     if (mode > 2) mode = 2;
-//     g_cvSpawnStrategy.SetInt(mode);
+// int mode = Get原生函数Cell(1);
+// if (mode < 0) mode = 0;
+// if (mode > 2) mode = 2;
+// g_cvSpawnStrategy.SetInt(mode);
 
-//     char sMode[32];
-//     if (mode == 0) Format(sMode, sizeof(sMode), "混合智能 (默认)");
-//     else if (mode == 1) Format(sMode, sizeof(sMode), "强制 Nav算法");
-//     else Format(sMode, sizeof(sMode), "强制 原版引擎");
+// char sMode;
+// if (mode == 0) Format(sMode, sizeof(sMode), "混合智能 (默认)");
+// else if (mode == 1) Format(sMode, sizeof(sMode), "强制 Nav算法");
+// else Format(sMode, sizeof(sMode), "强制 原版引擎");
 
-//     PrintToChatAll("\x04[Sion]\x01 外部指令: 刷怪引擎已切换为 \x03[%s]", sMode);
-//     return 1;
+// PrintToChatAll("\x04\x01 外部指令: 刷怪引擎已切换为 \x03", sMode);
+// return 1;
 // }
 public int Native_SetHungerCooldown(Handle plugin, int numParams)
 {
@@ -560,7 +549,7 @@ stock void EnsureNavAreasCache()
         g_AllNavAreasCache = new ArrayList();
         L4D_GetAllNavAreas(g_AllNavAreasCache);
         g_NavAreasCacheCount = g_AllNavAreasCache.Length;
-        // Debug_Print("[NAV CACHE] Initialized: %d areas", g_NavAreasCacheCount);
+        // Debug_Print("Initialized: %d areas", g_NavAreasCacheCount);
     }
 }
 // 思路：扫全图的寻路网格(NavArea)，根据它们到起点的距离百分比分配到多个“桶”里。
@@ -579,7 +568,7 @@ static void BuildNavBuckets()
 
     int   iAreaCount      = g_NavAreasCacheCount;
     float fMapMaxFlowDist = L4D2Direct_GetMapMaxFlowDistance();
-    // Debug_Print("[BUCKET] begin build: areas=%d", iAreaCount);
+    // Debug_Print("begin build: areas=%d", iAreaCount);
 
     // 3) 初始化 per-area / per-bucket 容器
     g_AreaZCore           = new ArrayList();
@@ -620,8 +609,8 @@ static void BuildNavBuckets()
         // // 过滤不合规的 Nav flags（救援/安全屋等）
         // if (!IsValidFlags(pArea.SpawnAttributes, bFinaleArea))
         // {
-        //     skippedFlag++;
-        //     continue;
+        // skippedFlag++;
+        // continue;
         // }
 
         // 采样中心与高度统计（最多 3 次）
@@ -659,7 +648,7 @@ static void BuildNavBuckets()
         }
     }
 
-    // Debug_Print("[BUCKET] pass1 done: valid=%d bad=%d skipped=%d took=%.3fs",
+    // Debug_Print("pass1 done: valid=%d bad=%d skipped=%d took=%.3fs",
     // addedValid, addedBad, skippedFlag, GetEngineTime() - t0);
 
     // 5) 第二遍：把坏 flow 的区域映射到最近“有效桶”（二维栅格 + 成本/时间保护）
@@ -674,7 +663,7 @@ static void BuildNavBuckets()
         float       t1          = GetEngineTime();
         if (estCostM > hardCostM)
         {
-            // Debug_Print("[BUCKET] pass2 SKIP(cost): B=%d V=%d est≈%.1fM", B, V, estCostM);
+            // Debug_Print("pass2 SKIP(cost): B=%d V=%d est≈%.1fM", B, V, estCostM);
         }
         else
         {
@@ -729,8 +718,8 @@ static void BuildNavBuckets()
                     float el = GetEngineTime() - t1;
                     if (el > timeBudgetS)
                     {
-                        // Debug_Print("[BUCKET] pass2 ABORT(time): bi=%d/%d mapped=%d dropped=%d el=%.3fs",
-                        //             bi, B, mapped, dropped, el);
+                        // Debug_Print("pass2 ABORT(time): bi=%d/%d mapped=%d dropped=%d el=%.3fs",
+                        // bi, B, mapped, dropped, el);
                         break;
                     }
                 }
@@ -812,12 +801,12 @@ static void BuildNavBuckets()
                 }
 
                 // if ((bi % 2048) == 0)}
-                // Debug_Print("[BUCKET] pass2 prog: %d/%d mapped=%d dropped=%d", bi, B, mapped, dropped);
+                // Debug_Print("pass2 prog: %d/%d mapped=%d dropped=%d", bi, B, mapped, dropped);
             }
 
-            // Debug_Print("[BUCKET] pass2 %s: B=%d V=%d mapped=%d dropped=%d took=%.3fs",
-            //     aborted ? "done(partial)" : "done",
-            //     B, V, mapped, dropped, GetEngineTime() - t1);
+            // Debug_Print("pass2 %s: B=%d V=%d mapped=%d dropped=%d took=%.3fs",
+            // aborted ? "done(partial)" : "done",
+            // B, V, mapped, dropped, GetEngineTime() - t1);
 
             // 5.5 释放 cellMap 内存
             for (int i = 0; i < ownedLists.Length; i++)
@@ -831,13 +820,13 @@ static void BuildNavBuckets()
     }
     else
     {
-        // Debug_Print("[BUCKET] pass2 skip: mapInvalid=%d valid=%d bad=%d",
-        //     gCV.bNavBucketMapInvalid ? 1 : 0, validIdxs.Length, badIdxs.Length);
+        // Debug_Print("pass2 skip: mapInvalid=%d valid=%d bad=%d",
+        // gCV.bNavBucketMapInvalid ? 1 : 0, validIdxs.Length, badIdxs.Length);
     }
 
     // 6) 完成：标记就绪 & 存缓存
     g_BucketsReady = true;
-    // Debug_Print("[BUCKET] build done: took=%.3fs", GetEngineTime() - t0);
+    // Debug_Print("build done: took=%.3fs", GetEngineTime() - t0);
 
     SaveBucketsToCache();    // 若启用缓存将写入 .kv（你已有实现）
 }
@@ -904,7 +893,7 @@ static void SaveBucketsToCache()
 
     kv.ExportToFile(g_sBucketCachePath);
     delete kv;
-    // Debug_Print("[BUCKET] saved to cache: %s", g_sBucketCachePath);
+    // Debug_Print("saved to cache: %s", g_sBucketCachePath);
 }
 
 static int FlowDistanceToPercent(float flowDist)
@@ -1106,7 +1095,7 @@ static bool TryLoadBucketsFromCache()
 
     delete kv;
     g_BucketsReady = true;
-    // Debug_Print("[BUCKET] loaded from cache: %s", g_sBucketCachePath);
+    // Debug_Print("loaded from cache: %s", g_sBucketCachePath);
     return true;
 }
 static int GetAreaIndexByNavID_Int(int navid)
@@ -1162,15 +1151,15 @@ static void RebuildNavBuckets()
 
 // stock bool TraceFilter(int entity, int contentsMask)
 // {
-//     if (entity <= MaxClients || !IsValidEntity(entity))
-//         return false;
+// if (entity <= MaxClients || !IsValidEntity(entity))
+// return false;
 
-//     static char sClassName[9];
-//     GetEntityClassname(entity, sClassName, sizeof(sClassName));
-//     if (strcmp(sClassName, "infected") == 0 || strcmp(sClassName, "witch") == 0)
-//         return false;
+// static char sClassName;
+// GetEntityClassname(entity, sClassName, sizeof(sClassName));
+// if (strcmp(sClassName, "infected") == 0 || strcmp(sClassName, "witch") == 0)
+// return false;
 
-//     return true;
+// return true;
 // }
 
 stock void GetSectorCenter(float outCenter[3], int targetSur)
@@ -1297,7 +1286,7 @@ static int CountAliveSurvivors()
     return n;
 }
 
-// [新增] 动态补货冷却：根据"战斗力"自动调整
+// 动态补货冷却：根据"战斗力"自动调整
 // sd_hunger_cooldown 作为基准值（4人满员时），人越少/倒地越多冷却越短
 static float SD_GetDynamicCooldown()
 {
@@ -1429,9 +1418,7 @@ void TouchNavCooldownID(int areaID, float now, float cooldown = 8.0)
     g_NavCooldown.SetValue(key, view_as<any>(now + cooldown));
 }
 
-// =========================
 // 分散度工具（冷却/扇区/间距/并列最小随机）
-// =========================
 // === 原实现改名：以 NavAreaID 为 key ===
 bool IsNavOnCooldownID(int areaID, float now)
 {
@@ -1462,7 +1449,7 @@ stock int GetNavIDByIndex(int idx)
 // === Limit-aware penalty scale (uses PEN_LIMIT_* macros) ===
 stock float PenLimitScale()
 {
-    // iSiLimit 在 gCV 里；把它压到 [PEN_LIMIT_MINL .. PEN_LIMIT_MAXL]
+    // iSiLimit 在 gCV 里；把它压到
     float L = float(iSiLimit);
     float t = Clamp01((L - float(PEN_LIMIT_MINL)) / float(PEN_LIMIT_MAXL - PEN_LIMIT_MINL));
     // L=MINL 时返回 1.0（惩罚原强度）；L=MAXL 及以上时返回 0.5（惩罚减半）
@@ -1481,7 +1468,7 @@ stock bool PassMinSeparation(const float pos[3])
     for (int i = lastSpawns.Length - 1; i >= 0; i--)
     {
         float rec[4];
-        lastSpawns.GetArray(i, rec);    // [x, y, z, t]
+        lastSpawns.GetArray(i, rec);
 
         // 过期清理
         if (now - rec[3] > SEP_TTL)
@@ -1595,7 +1582,7 @@ public bool TraceFilter(int entity, int contentsMask)
     if (entity <= MaxClients) return false;    // 忽略玩家
     if (!IsValidEntity(entity)) return false;
 
-    // [极致优化] 避免字符串操作
+    // 避免字符串操作
     // 普通丧尸(Infected) 和 Witch 都有特定的 Classname 字符串
     // 但我们可以通过更轻量的属性来判断
 
@@ -1678,20 +1665,22 @@ public Action Timer_KickDeadBot(Handle timer, int userid)
     int client = GetClientOfUserId(userid);
     if (client > 0 && IsClientInGame(client) && !IsPlayerAlive(client))
     {
-        KickClient(client, "Instant Cleanup");    // 立即释放槽位
+        // 这里的思路是：如果有死掉的特感机器人，立刻把它踢出服务器，
+        // 防止它占用现有的特感坑位。这能让复活节奏变得更加紧凑。
+        KickClient(client, "Instant Cleanup");
     }
     return Plugin_Stop;
 }
 
-// =========================================================================
-// 插件主逻辑
-// =========================================================================
+// 这是插件启动和加载时的核心方法。
+// 主要是做一些前置工作：比如把控制面板参数(Convar)注册好、读一下白名单名单，
+// 顺便把引擎的一些接口和寻路网络(Nav)的偏移地址通过 Gamedata 获取到，打好地基。
 public void OnPluginStart()
 {
     bNavCacheEnable = true;
     g_hSpawnQueue   = new ArrayList();
     InitSDK_FromGamedata();    // ← 加载 NavArea SDK/偏移
-    // [Nav] 初始化空桶
+    // 初始化空桶
     for (int i = 0; i < FLOW_BUCKETS; i++)
         g_FlowBuckets[i] = null;    // 先置空，在 Build 时创建
 
@@ -1708,7 +1697,7 @@ public void OnPluginStart()
     g_cvHungerCooldown     = CreateConVar("sd_hunger_cooldown", "5.0", "刷新时间");
     g_cvLimitBatchHalf     = CreateConVar("sd_limit_batch_half", "1", "单次生成队列半数限制 (1=是)");
     g_cvSilentSI           = CreateConVar("sd_silent_si", "0", "独立选项: 是否开启忍者特感 (全局屏蔽特感叫声): 0=关, 1=开");
-    //  注册常驻倒霉蛋开关 (默认为 1: 开启)
+    // 注册常驻倒霉蛋开关 (默认为 1: 开启)
     g_cvGriefPermanentEnv  = CreateConVar("sd_grief_permanent", "0", "是否启用代码中写死的常驻倒霉蛋功能 (1=开启, 0=关闭)");
     g_cvPhantomMaxSounds   = CreateConVar("sd_phantom_max_sounds", "4", "触发幻听时，最多同时播放几条进攻声音 (建议 2-4)");
 
@@ -1731,13 +1720,13 @@ public void OnPluginStart()
 
     // 注册命令 (只有 ROOT 权限可用)
     RegAdminCmd("sm_sd_grief", Cmd_ToggleGrief, ADMFLAG_ROOT, "开关指定玩家的贴脸刷怪模式");
-    // [Nav管理] 3. 注册命令 (用于调试)
+    // 3. 注册命令 (用于调试)
     RegAdminCmd("sm_sd_rebuild_nav", Cmd_RebuildNav, ADMFLAG_ROOT, "强制重建Nav分桶");
     RegAdminCmd("sm_nd_flow", Cmd_NavDebugFlow, ADMFLAG_ROOT, "可视化 Nav 分桶流向 (画出通往终点的 Flow 路径)");
     // 在 OnPluginStart() 里添加这一行
     RegAdminCmd("sm_nd", Cmd_NavDebug, ADMFLAG_ROOT, "调试当前位置的Nav和分桶信息");
 
-    //    AutoExecConfig(true, "smart_director_v22_clean");
+    // AutoExecConfig(true, "smart_director_v22_clean");
 
     HookEvent("round_start", Event_RoundStart, EventHookMode_PostNoCopy);
     HookEvent("round_end", Event_RoundEnd, EventHookMode_PostNoCopy);
@@ -1798,23 +1787,23 @@ public void OnPluginStart()
     }
 }
 
-// public Action Event_PlayerSpawn_Account(Event event, const char[] name, bool dontBroadcast)
+// public Action Event_PlayerSpawn_Account(Event event, const charname, bool dontBroadcast)
 // {
-//     int client = GetClientOfUserId(event.GetInt("userid"));
-//     if (client > 0 && IsFakeClient(client) && GetClientTeam(client) == 3)
-//     {
-//         // 怪生出来了！销账！
-//         if (g_iTotalPending > 0)
-//         {
-//             g_iTotalPending--;
-//         }
+// int client = GetClientOfUserId(event.GetInt("userid"));
+// if (client > 0 && IsFakeClient(client) && GetClientTeam(client) == 3)
+// {
+// // 怪生出来了！销账！
+// if (g_iTotalPending > 0)
+// {
+// g_iTotalPending--;
+// }
 
-//         g_fSpawnTime[client] = GetEngineTime();
+// g_fSpawnTime= GetEngineTime();
 
-//         // 双重保险：防止长时间没生出来导致 g_iTotalPending 卡在非0
-//         // 可以加个 5秒 的 Timer 强制归零 g_iTotalPending，或者定期校准
-//     }
-//     return Plugin_Continue;
+// // 双重保险：防止长时间没生出来导致 g_iTotalPending 卡在非0
+// // 可以加个 5秒 的 Timer 强制归零 g_iTotalPending，或者定期校准
+// }
+// return Plugin_Continue;
 // }
 public void OnPluginEnd()
 {
@@ -1872,7 +1861,7 @@ public void OnMapStart()
     CreateTimer(1.0, Timer_BuildNavBuckets_Delayed);
     BuildLogicCache();
     SD_ApplyTierSettings(g_cvDifficultyTier.IntValue);
-    // [Fix] Removed g_iLaserSprite (Warning Fix)
+    // Removed g_iLaserSprite (Warning Fix)
 }
 
 public void OnMapEnd()
@@ -1889,7 +1878,7 @@ stock void ClearNavAreasCache()
         delete g_AllNavAreasCache;
         g_AllNavAreasCache   = null;
         g_NavAreasCacheCount = 0;
-        // Debug_Print("[NAV CACHE] Cleared");
+        // Debug_Print("Cleared");
     }
 }
 
@@ -1926,7 +1915,7 @@ bool SD_IsPosVisible(float pos[3], int target = 0)
     // 模式 2: 循环检查全队 (极速版)
     for (int i = 1; i <= MaxClients; i++)
     {
-        // [优化] 这里用了宏，直接检查位，不调用 API
+        // 这里用了宏，直接检查位，不调用 接口
         if (IsValidSurvFast(i))
         {
             if (L4D2_IsVisibleToPlayer(i, TEAM_SURVIVOR, TEAM_INFECTED, 0, checkPos)) return true;
@@ -1997,78 +1986,78 @@ static bool IsPosVisibleSDK(float pos[3], bool teleportMode)
 
     return false;
 }
-// bool SD_FindNavSpawnPos_Advanced(int targetClient, float minRange, float maxRange, bool reqVis, float outPos[3])
+// bool SD_FindNavSpawnPos_Advanced(int targetClient, float minRange, float maxRange, bool reqVis, float outPos)
 // {
-//     if (!g_BucketsReady) return false;
+// if (!g_BucketsReady) return false;
 
-//     float targetPos[3];
-//     GetClientAbsOrigin(targetClient, targetPos);
+// float targetPos;
+// GetClientAbsOrigin(targetClient, targetPos);
 
-//     int targetPercent = 0;
-//     // 1. 使用安全的获取方式纠正断层进度
-//     if (!TryGetClientFlowPercentSafe(targetClient, targetPercent)) {
-//         // 2. 如果彻底断层，使用回退进度兜底
-//         int fpct;
-//         if (GetFallbackSurPct(fpct)) {
-//             targetPercent = fpct;
-//         }
-//     }
+// int targetPercent = 0;
+// // 1. 使用安全的获取方式纠正断层进度
+// if (!TryGetClientFlowPercentSafe(targetClient, targetPercent)) {
+// // 2. 如果彻底断层，使用回退进度兜底
+// int fpct;
+// if (GetFallbackSurPct(fpct)) {
+// targetPercent = fpct;
+// }
+// }
 
-//     int searchBuckets[FLOW_BUCKETS];
-//     int bucketCount = 0;
+// int searchBuckets;
+// int bucketCount = 0;
 
-//     // =================================================================
-//     // [核心清理] 彻底干掉 isPathBlocked 逻辑！
-//     // 直接使用 BuildBucketOrder，以当前进度为中心，前后铺开搜索 (范围25个桶)
-//     // 这样无论是什么地形，特感都会在前后方随机包抄
-//     // =================================================================
-//     bucketCount = BuildBucketOrder(targetPercent, 25, true, searchBuckets);
+// // =================================================================
+// // 彻底干掉 isPathBlocked 逻辑！
+// // 直接使用 BuildBucketOrder，以当前进度为中心，前后铺开搜索 (范围25个桶)
+// // 这样无论是什么地形，特感都会在前后方随机包抄
+// // =================================================================
+// bucketCount = BuildBucketOrder(targetPercent, 25, true, searchBuckets);
 
-//     for (int i = 0; i < bucketCount; i++)
-//     {
-//         int b = searchBuckets[i];
-//         if (g_BucketMaxZ[b] < targetPos[2] - 500.0 || g_BucketMinZ[b] > targetPos[2] + 500.0)
-//             continue;
+// for (int i = 0; i < bucketCount; i++)
+// {
+// int b = searchBuckets;
+// if (g_BucketMaxZ< targetPos- 500.0 || g_BucketMinZ> targetPos+ 500.0)
+// continue;
 
-//         ArrayList bucket = g_FlowBuckets[b];
-//         if (bucket == null || bucket.Length == 0) continue;
+// ArrayList bucket = g_FlowBuckets;
+// if (bucket == null || bucket.Length == 0) continue;
 
-//         int count    = bucket.Length;
-//         int attempts = (count > 8) ? 8 : count;
+// int count    = bucket.Length;
+// int attempts = (count > 8) ? 8 : count;
 
-//         for (int k = 0; k < attempts; k++)
-//         {
-//             int     areaIdx  = bucket.Get(GetRandomInt(0, count - 1));
-//             Address areaAddr = g_AllNavAreasCache.Get(areaIdx);
-//             if (areaAddr == Address_Null) continue;
+// for (int k = 0; k < attempts; k++)
+// {
+// int     areaIdx  = bucket.Get(GetRandomInt(0, count - 1));
+// Address areaAddr = g_AllNavAreasCache.Get(areaIdx);
+// if (areaAddr == Address_Null) continue;
 
-//             NavArea pArea = view_as<NavArea>(areaAddr);
-//             float   p[3];
-//             pArea.GetRandomPoint(p);
+// NavArea pArea = view_as<NavArea>(areaAddr);
+// float   p;
+// pArea.GetRandomPoint(p);
 
-//             float dist  = GetVectorDistance(targetPos, p);
-//             float slack = (p[2] > targetPos[2] + 100.0) ? 150.0 : 0.0;
+// float dist  = GetVectorDistance(targetPos, p);
+// float slack = (p> targetPos+ 100.0) ? 150.0 : 0.0;
 
-//             // [修复编译错误] 既然没有阻塞状态了，直接使用传进来的 minRange
-//             if (dist < minRange || dist > (maxRange + slack)) continue;
+// // 既然没有阻塞状态了，直接使用传进来的 minRange
+// if (dist < minRange || dist > (maxRange + slack)) continue;
 
-//             if (WillStuck(p)) continue;
-//             if (reqVis && SD_IsPosVisible(p, targetClient)) continue;
+// if (WillStuck(p)) continue;
+// if (reqVis && SD_IsPosVisible(p, targetClient)) continue;
 
-//             // 动态计算寻路极限：直线距离的 1.5 倍 + Z轴高度差的 2.5 倍（补偿走楼梯绕路）
-//             float zDiff = FloatAbs(p[2] - targetPos[2]);
-//             float pathLimit = (dist * 1.5) + (zDiff * 2.5);
+// // 动态计算寻路极限：直线距离的 1.5 倍 + Z轴高度差的 2.5 倍（补偿走楼梯绕路）
+// float zDiff = FloatAbs(p- targetPos);
+// float pathLimit = (dist * 1.5) + (zDiff * 2.5);
 
-//             // 调用修复后的寻路函数
-//             if (PathPenalty_NoBuild(p, targetClient, pathLimit) != 0.0)
-//                 continue;
+// // 调用修复后的寻路函数
+// if (PathPenalty_NoBuild(p, targetClient, pathLimit) != 0.0)
+// continue;
 
-//             outPos = p;
-//             return true;
-//         }
-//     }
+// outPos = p;
+// return true;
+// }
+// }
 
-//     return false;
+// return false;
 // }
 bool SD_FindNavSpawnPos_Advanced(int targetClient, float minRange, float maxRange, bool reqVis, float outPos[3])
 {
@@ -2123,9 +2112,7 @@ bool SD_FindNavSpawnPos_Advanced(int targetClient, float minRange, float maxRang
             if (WillStuck(p)) continue;
             if (reqVis && SD_IsPosVisible(p, targetClient)) continue;
 
-            // =================================================================
-            // [新增] 强制立体包围 (反扎堆检测)
-            // =================================================================
+            // 强制立体包围 (反扎堆检测)
             if (!PassMinSeparation(p)) continue;
 
             // 动态计算寻路极限：直线距离的 1.5 倍 + Z轴高度差的 2.5 倍
@@ -2138,9 +2125,7 @@ bool SD_FindNavSpawnPos_Advanced(int targetClient, float minRange, float maxRang
 
             outPos = p;
 
-            // =================================================================
-            // [新增] 记录成功点位，供同批次的下一个特感避开此区域
-            // =================================================================
+            // 记录成功点位，供同批次的下一个特感避开此区域
             float record[4];
             record[0] = p[0];
             record[1] = p[1];
@@ -2155,215 +2140,215 @@ bool SD_FindNavSpawnPos_Advanced(int targetClient, float minRange, float maxRang
 
     return false;
 }
-// bool SD_FindNavSpawnPos_Advanced(int targetClient, float minRange, float maxRange, bool reqVis, float outPos[3])
+// bool SD_FindNavSpawnPos_Advanced(int targetClient, float minRange, float maxRange, bool reqVis, float outPos)
 // {
-//     if (!g_BucketsReady) return false;
+// if (!g_BucketsReady) return false;
 
-//     float targetPos[3];
-//     GetClientAbsOrigin(targetClient, targetPos);
+// float targetPos;
+// GetClientAbsOrigin(targetClient, targetPos);
 
-//     // === 修复为 ===
-//     int targetPercent = 0;
-//     // 1. 使用你自己的安全函数，它会自动通过脚底区域去纠正断层进度
-//     if (!TryGetClientFlowPercentSafe(targetClient, targetPercent)) {
-//         // 2. 如果彻底断层，使用你的回退进度兜底，防止归零
-//         int fpct;
-//         if (GetFallbackSurPct(fpct)) {
-//             targetPercent = fpct;
-//         }
-//     }
-
-//     // bool isPathBlocked = SD_IsForwardBlockedForSurvivors(targetClient);
-//     int  searchBuckets[FLOW_BUCKETS];
-//     int  bucketCount = 0;
-
-//     searchBuckets[bucketCount++] = targetPercent;
-//     for (int i = 1; i <= 10; i++)
-//     {
-//         int b = targetPercent - i;
-//         if (b >= 0) searchBuckets[bucketCount++] = b;
-//     }
-
-//     // if (isPathBlocked)
-//     // {
-//     //     searchBuckets[bucketCount++] = targetPercent;
-//     //     for (int i = 1; i <= 10; i++)
-//     //     {
-//     //         int b = targetPercent - i;
-//     //         if (b >= 0) searchBuckets[bucketCount++] = b;
-//     //     }
-//     // }
-//     // else
-//     // {
-//     //     bucketCount = BuildBucketOrder(targetPercent, 25, true, searchBuckets);
-//     // }
-
-//     for (int i = 0; i < bucketCount; i++)
-//     {
-//         int b = searchBuckets[i];
-//         if (g_BucketMaxZ[b] < targetPos[2] - 500.0 || g_BucketMinZ[b] > targetPos[2] + 500.0)
-//             continue;
-
-//         ArrayList bucket = g_FlowBuckets[b];
-//         if (bucket == null || bucket.Length == 0) continue;
-
-//         int count    = bucket.Length;
-//         int attempts = (count > 8) ? 8 : count;
-
-//         for (int k = 0; k < attempts; k++)
-//         {
-//             int     areaIdx  = bucket.Get(GetRandomInt(0, count - 1));
-//             Address areaAddr = g_AllNavAreasCache.Get(areaIdx);
-//             if (areaAddr == Address_Null) continue;
-
-//             NavArea pArea = view_as<NavArea>(areaAddr);
-//             float   p[3];
-//             pArea.GetRandomPoint(p);
-
-//             float dist         = GetVectorDistance(targetPos, p);
-//             // float realMinRange = isPathBlocked ? (minRange * 0.7) : minRange;
-//             float slack        = (p[2] > targetPos[2] + 100.0) ? 150.0 : 0.0;
-
-//             if (dist < realMinRange || dist > (maxRange + slack)) continue;
-//             if (WillStuck(p)) continue;
-//             if (reqVis && SD_IsPosVisible(p, targetClient)) continue;
-
-//             // [核心修复] 动态计算寻路极限：直线距离的 1.5 倍 + Z轴高度差的 2.5 倍（补偿走楼梯绕路）
-//             float zDiff = FloatAbs(p[2] - targetPos[2]);
-//             float pathLimit = (dist * 1.5) + (zDiff * 2.5);
-
-//             // 调用修复后的寻路函数
-//             if (PathPenalty_NoBuild(p, targetClient, pathLimit) != 0.0)
-//                 continue;
-
-//             outPos = p;
-//             return true;
-//         }
-//     }
-//     return false;
+// // === 修复为 ===
+// int targetPercent = 0;
+// // 1. 使用你自己的安全函数，它会自动通过脚底区域去纠正断层进度
+// if (!TryGetClientFlowPercentSafe(targetClient, targetPercent)) {
+// // 2. 如果彻底断层，使用你的回退进度兜底，防止归零
+// int fpct;
+// if (GetFallbackSurPct(fpct)) {
+// targetPercent = fpct;
 // }
-// bool SD_FindNavSpawnPos_Advanced(int targetClient, float minRange, float maxRange, bool reqVis, float outPos[3])
-// {
-//     if (!g_BucketsReady) return false;
-
-//     // 1. 准备数据
-//     float targetPos[3];
-//     GetClientAbsOrigin(targetClient, targetPos);
-
-//     float targetFlow    = L4D2Direct_GetFlowDistance(targetClient);
-
-//     // 计算百分比
-//     int   targetPercent = 0;
-//     if (g_fMapMaxFlow > 1.0)
-//         targetPercent = RoundToNearest((targetFlow / g_fMapMaxFlow) * 100.0);
-//     targetPercent      = clampi(targetPercent, 0, 100);
-
-//     // =================================================================
-//     // [战术决策] 核心改动点
-//     // =================================================================
-//     // 使用探针检测：前面的门/路是不是断的？
-//     bool isPathBlocked = SD_IsForwardBlockedForSurvivors(targetClient);
-
-//     int  searchBuckets[FLOW_BUCKETS];
-//     int  bucketCount = 0;
-
-//     if (isPathBlocked)
-//     {
-//         // >>> 模式 A：关门打狗 (只刷身后) <<<
-//         // 既然前面不通，我们就死心塌地只刷“当前”和“后面”
-//         // 这样怪就会刷在生还者身边的树林里，或者屁股后面
-
-//         // 1. 加入当前桶 (脚下/旁边)
-//         searchBuckets[bucketCount++] = targetPercent;
-
-//         // 2. 加入后方桶 (往回搜 15% 的路程)
-//         // 这样特感会从后面包抄，或者从旁边的树林出来
-//         for (int i = 0; i <= 10; i++)
-//         {
-//             int b = targetPercent - i;
-//             if (b >= 0) searchBuckets[bucketCount++] = b;
-//         }
-
-//         // 注意：这里绝对没有加入 targetPercent + 1 (前方桶)
-//         // 所以根本不需要 hardFlowLimit，因为算法根本不会去看门后的点
-//     }
-//     else
-//     {
-//         // >>> 模式 B：全速推进 (刷前方) <<<
-//         // 门开了，或者根本没门。
-//         // 使用 BuildBucketOrder (前2后1) 进行广域搜索，默认偏向前方
-//         bucketCount = BuildBucketOrder(targetPercent, 25, true, searchBuckets);
-//     }
-
-//     // 3. 开始极速遍历
-//     for (int i = 0; i < bucketCount; i++)
-//     {
-//         int b = searchBuckets[i];
-
-//         // [优化] 桶级高度粗筛
-//         if (g_BucketMaxZ[b] < targetPos[2] - 500.0 || g_BucketMinZ[b] > targetPos[2] + 500.0)
-//             continue;
-
-//         ArrayList bucket = g_FlowBuckets[b];
-//         if (bucket == null || bucket.Length == 0) continue;
-
-//         // [抽样]
-//         int count    = bucket.Length;
-//         int attempts = (count > 8) ? 8 : count;
-
-//         for (int k = 0; k < attempts; k++)
-//         {
-//             // 随机取点
-//             int     areaIdx  = bucket.Get(GetRandomInt(0, count - 1));
-//             Address areaAddr = g_AllNavAreasCache.Get(areaIdx);
-//             if (areaAddr == Address_Null) continue;
-
-//             NavArea pArea = view_as<NavArea>(areaAddr);
-
-//             // [逻辑简化] 不需要 hardFlowLimit 检查了
-//             // 因为如果是关门状态，searchBuckets 里根本就没有门后的桶
-
-//             // [属性检查] 避开安全屋等
-
-//             float   p[3];
-//             pArea.GetRandomPoint(p);
-
-//             // [距离检查]
-//             float dist         = GetVectorDistance(targetPos, p);
-
-//             // 守点模式下(PathBlocked)，允许怪刷得更近一点，增加压迫感
-//             float realMinRange = isPathBlocked ? (minRange * 0.7) : minRange;
-
-//             float slack        = (p[2] > targetPos[2] + 100.0) ? 150.0 : 0.0;
-
-//             if (dist < realMinRange || dist > (maxRange + slack)) continue;
-
-//             // [防卡检查]
-//             if (WillStuck(p)) continue;
-
-//             // [可视检查]
-//             // if (IsPosVisibleSDK(p, targetClient)) continue;
-//             if (reqVis && SD_IsPosVisible(p, targetClient)) continue;
-
-//             // [路径检查]
-//             // 这一点非常重要：即使我们只在身后刷，也要保证特感能跑过来
-//             // (比如防止刷在身后的封闭房间里)
-//             float pathLimit = dist * 1.3;
-
-//             if (PathPenalty_NoBuild(p, targetClient, float(b - targetPercent), pathLimit) != 0.0)
-//                 continue;
-
-//             // [成功] 找到点，立即返回
-//             outPos = p;
-//             return true;
-//         }
-//     }
-
-//     // 搜遍了也没找到
-//     return false;
 // }
 
-// [修改] —— 距离平滑评分：以“甜点距离 sweet”为中心的对称衰减
+// // bool isPathBlocked = SD_IsForwardBlockedForSurvivors(targetClient);
+// int  searchBuckets;
+// int  bucketCount = 0;
+
+// searchBuckets= targetPercent;
+// for (int i = 1; i <= 10; i++)
+// {
+// int b = targetPercent - i;
+// if (b >= 0) searchBuckets= b;
+// }
+
+// // if (isPathBlocked)
+// // {
+// //     searchBuckets= targetPercent;
+// //     for (int i = 1; i <= 10; i++)
+// //     {
+// //         int b = targetPercent - i;
+// //         if (b >= 0) searchBuckets= b;
+// //     }
+// // }
+// // else
+// // {
+// //     bucketCount = BuildBucketOrder(targetPercent, 25, true, searchBuckets);
+// // }
+
+// for (int i = 0; i < bucketCount; i++)
+// {
+// int b = searchBuckets;
+// if (g_BucketMaxZ< targetPos- 500.0 || g_BucketMinZ> targetPos+ 500.0)
+// continue;
+
+// ArrayList bucket = g_FlowBuckets;
+// if (bucket == null || bucket.Length == 0) continue;
+
+// int count    = bucket.Length;
+// int attempts = (count > 8) ? 8 : count;
+
+// for (int k = 0; k < attempts; k++)
+// {
+// int     areaIdx  = bucket.Get(GetRandomInt(0, count - 1));
+// Address areaAddr = g_AllNavAreasCache.Get(areaIdx);
+// if (areaAddr == Address_Null) continue;
+
+// NavArea pArea = view_as<NavArea>(areaAddr);
+// float   p;
+// pArea.GetRandomPoint(p);
+
+// float dist         = GetVectorDistance(targetPos, p);
+// // float realMinRange = isPathBlocked ? (minRange * 0.7) : minRange;
+// float slack        = (p> targetPos+ 100.0) ? 150.0 : 0.0;
+
+// if (dist < realMinRange || dist > (maxRange + slack)) continue;
+// if (WillStuck(p)) continue;
+// if (reqVis && SD_IsPosVisible(p, targetClient)) continue;
+
+// // 动态计算寻路极限：直线距离的 1.5 倍 + Z轴高度差的 2.5 倍（补偿走楼梯绕路）
+// float zDiff = FloatAbs(p- targetPos);
+// float pathLimit = (dist * 1.5) + (zDiff * 2.5);
+
+// // 调用修复后的寻路函数
+// if (PathPenalty_NoBuild(p, targetClient, pathLimit) != 0.0)
+// continue;
+
+// outPos = p;
+// return true;
+// }
+// }
+// return false;
+// }
+// bool SD_FindNavSpawnPos_Advanced(int targetClient, float minRange, float maxRange, bool reqVis, float outPos)
+// {
+// if (!g_BucketsReady) return false;
+
+// // 1. 准备数据
+// float targetPos;
+// GetClientAbsOrigin(targetClient, targetPos);
+
+// float targetFlow    = L4D2Direct_GetFlowDistance(targetClient);
+
+// // 计算百分比
+// int   targetPercent = 0;
+// if (g_fMapMaxFlow > 1.0)
+// targetPercent = RoundToNearest((targetFlow / g_fMapMaxFlow) * 100.0);
+// targetPercent      = clampi(targetPercent, 0, 100);
+
+// // =================================================================
+// // 核心改动点
+// // =================================================================
+// // 使用探针检测：前面的门/路是不是断的？
+// bool isPathBlocked = SD_IsForwardBlockedForSurvivors(targetClient);
+
+// int  searchBuckets;
+// int  bucketCount = 0;
+
+// if (isPathBlocked)
+// {
+// // >>> 模式 A：关门打狗 (只刷身后) <<<
+// // 既然前面不通，我们就死心塌地只刷“当前”和“后面”
+// // 这样怪就会刷在生还者身边的树林里，或者屁股后面
+
+// // 1. 加入当前桶 (脚下/旁边)
+// searchBuckets= targetPercent;
+
+// // 2. 加入后方桶 (往回搜 15% 的路程)
+// // 这样特感会从后面包抄，或者从旁边的树林出来
+// for (int i = 0; i <= 10; i++)
+// {
+// int b = targetPercent - i;
+// if (b >= 0) searchBuckets= b;
+// }
+
+// // 注意：这里绝对没有加入 targetPercent + 1 (前方桶)
+// // 所以根本不需要 hardFlowLimit，因为算法根本不会去看门后的点
+// }
+// else
+// {
+// // >>> 模式 B：全速推进 (刷前方) <<<
+// // 门开了，或者根本没门。
+// // 使用 BuildBucketOrder (前2后1) 进行广域搜索，默认偏向前方
+// bucketCount = BuildBucketOrder(targetPercent, 25, true, searchBuckets);
+// }
+
+// // 3. 开始极速遍历
+// for (int i = 0; i < bucketCount; i++)
+// {
+// int b = searchBuckets;
+
+// // 桶级高度粗筛
+// if (g_BucketMaxZ< targetPos- 500.0 || g_BucketMinZ> targetPos+ 500.0)
+// continue;
+
+// ArrayList bucket = g_FlowBuckets;
+// if (bucket == null || bucket.Length == 0) continue;
+
+// //
+// int count    = bucket.Length;
+// int attempts = (count > 8) ? 8 : count;
+
+// for (int k = 0; k < attempts; k++)
+// {
+// // 随机取点
+// int     areaIdx  = bucket.Get(GetRandomInt(0, count - 1));
+// Address areaAddr = g_AllNavAreasCache.Get(areaIdx);
+// if (areaAddr == Address_Null) continue;
+
+// NavArea pArea = view_as<NavArea>(areaAddr);
+
+// // 不需要 hardFlowLimit 检查了
+// // 因为如果是关门状态，searchBuckets 里根本就没有门后的桶
+
+// // 避开安全屋等
+
+// float   p;
+// pArea.GetRandomPoint(p);
+
+// //
+// float dist         = GetVectorDistance(targetPos, p);
+
+// // 守点模式下(PathBlocked)，允许怪刷得更近一点，增加压迫感
+// float realMinRange = isPathBlocked ? (minRange * 0.7) : minRange;
+
+// float slack        = (p> targetPos+ 100.0) ? 150.0 : 0.0;
+
+// if (dist < realMinRange || dist > (maxRange + slack)) continue;
+
+// //
+// if (WillStuck(p)) continue;
+
+// //
+// // if (IsPosVisibleSDK(p, targetClient)) continue;
+// if (reqVis && SD_IsPosVisible(p, targetClient)) continue;
+
+// //
+// // 这一点非常重要：即使我们只在身后刷，也要保证特感能跑过来
+// // (比如防止刷在身后的封闭房间里)
+// float pathLimit = dist * 1.3;
+
+// if (PathPenalty_NoBuild(p, targetClient, float(b - targetPercent), pathLimit) != 0.0)
+// continue;
+
+// // 找到点，立即返回
+// outPos = p;
+// return true;
+// }
+// }
+
+// // 搜遍了也没找到
+// return false;
+// }
+
+// —— 距离平滑评分：以“甜点距离 sweet”为中心的对称衰减
 stock float ScoreDistSmooth(float dminEye, float sweet, float width)
 {
     // 防御：宽度太小会过于尖锐
@@ -2384,8 +2369,8 @@ stock float ExpF(float x)
 {
     return Pow(M_E, x);
 }
-// [新增] 新评分系统 - 计算高度得分 (可为负)
-// [ADD] New Scoring System - Calculate Height Score (can be negative)
+// 新评分系统 - 计算高度得分 (可为负)
+// New Scoring System - Calculate Height Score (can be negative)
 stock float CalculateScore_Height(int zc, const float p[3], float refEyeZ)
 {
     float zRel = p[2] - refEyeZ;
@@ -2473,7 +2458,7 @@ static float GetMinDistToAnySurvivor(const float p[3])
     }
     return best;
 }
-// [新增] —— 简单读写（无 TTL）
+// —— 简单读写（无 TTL）
 stock bool PathCache_TryGetSimple(const char[] key, bool &okOut)
 {
     if (g_PathCacheRes == null) return false;
@@ -2487,7 +2472,7 @@ stock void PathCache_PutSimple(const char[] key, bool ok)
     if (g_PathCacheRes == null) return;
     g_PathCacheRes.SetValue(key, view_as<any>(ok ? 1 : 0));
 }
-// [核心修复] 直接接收计算好的寻路极限距离 limitCost
+// 直接接收计算好的寻路极限距离 limitCost
 stock float PathPenalty_NoBuild(const float candPos[3], int targetSur, float limitCost)
 {
     int surv = -1;
@@ -2515,7 +2500,7 @@ stock float PathPenalty_NoBuild(const float candPos[3], int targetSur, float lim
     Address navStart = L4D_GetNearestNavArea(survPos, 120.0, false, false, false, TEAM_INFECTED);
     if (!navGoal || !navStart) return PATH_NO_BUILD_PENALTY;
 
-    // [修复] 不再瞎算 limitCost，直接使用传进来的参数
+    // 不再瞎算 limitCost，直接使用传进来的参数
     if (bPathCacheEnable)
     {
         char key[64];
@@ -2532,61 +2517,61 @@ stock float PathPenalty_NoBuild(const float candPos[3], int targetSur, float lim
     bool ok = L4D2_NavAreaBuildPath(navGoal, navStart, limitCost, TEAM_INFECTED, false);
     return ok ? 0.0 : PATH_NO_BUILD_PENALTY;
 }
-// [修改] —— 整函数覆盖：使用波级缓存（无 TTL）
-// stock float PathPenalty_NoBuild(const float candPos[3], int targetSur, float ring, float spawnmax)
+// —— 整函数覆盖：使用波级缓存（无 TTL）
+// stock float PathPenalty_NoBuild(const float candPos, int targetSur, float ring, float spawnmax)
 // {
-//     // 选目标幸存者：优先 targetSur，其次任意存活
-//     int surv = -1;
-//     if (IsValidSurvFast(targetSur) && IsAlive(targetSur) && !L4D_IsPlayerIncapacitated(targetSur))
-//     {
-//         surv = targetSur;
-//     }
-//     else
-//     {
-//         for (int i = 1; i <= MaxClients; i++)
-//         {
-//             if (IsValidSurvFast(i) && IsAlive(i) && !L4D_IsPlayerIncapacitated(i))
-//             {
-//                 surv = i;
-//                 break;
-//             }
-//         }
-//     }
-//     if (surv == -1) return PATH_NO_BUILD_PENALTY;    // 没有可用幸存者，按“不可达”
+// // 选目标幸存者：优先 targetSur，其次任意存活
+// int surv = -1;
+// if (IsValidSurvFast(targetSur) && IsAlive(targetSur) && !L4D_IsPlayerIncapacitated(targetSur))
+// {
+// surv = targetSur;
+// }
+// else
+// {
+// for (int i = 1; i <= MaxClients; i++)
+// {
+// if (IsValidSurvFast(i) && IsAlive(i) && !L4D_IsPlayerIncapacitated(i))
+// {
+// surv = i;
+// break;
+// }
+// }
+// }
+// if (surv == -1) return PATH_NO_BUILD_PENALTY;    // 没有可用幸存者，按“不可达”
 
-//     // 生还者位置（与你 SpawnInfected 的口径一致）
-//     float survPos[3];
-//     GetClientEyePosition(surv, survPos);
-//     survPos[2] -= 60.0;
+// // 生还者位置（与你 SpawnInfected 的口径一致）
+// float survPos;
+// GetClientEyePosition(surv, survPos);
+// survPos-= 60.0;
 
-//     // 找最近 NavArea
-//     Address navGoal  = L4D_GetNearestNavArea(candPos, 120.0, false, false, false, TEAM_INFECTED);
-//     Address navStart = L4D_GetNearestNavArea(survPos, 120.0, false, false, false, TEAM_INFECTED);
-//     if (!navGoal || !navStart) return PATH_NO_BUILD_PENALTY;
+// // 找最近 NavArea
+// Address navGoal  = L4D_GetNearestNavArea(candPos, 120.0, false, false, false, TEAM_INFECTED);
+// Address navStart = L4D_GetNearestNavArea(survPos, 120.0, false, false, false, TEAM_INFECTED);
+// if (!navGoal || !navStart) return PATH_NO_BUILD_PENALTY;
 
-//     // 代价上限：min(ring*3, spawnmax*1.5)
-//     float limitCost = FloatMin(ring * 3.0, spawnmax * 1.5);
+// // 代价上限：min(ring*3, spawnmax*1.5)
+// float limitCost = FloatMin(ring * 3.0, spawnmax * 1.5);
 
-//     if (bPathCacheEnable)
-//     {
-//         char key[64];
-//         PathCache_BuildKey(navGoal, navStart, limitCost, key, sizeof key);
+// if (bPathCacheEnable)
+// {
+// char key;
+// PathCache_BuildKey(navGoal, navStart, limitCost, key, sizeof key);
 
-//         bool okCached;
-//         if (PathCache_TryGetSimple(key, okCached))
-//             return okCached ? 0.0 : PATH_NO_BUILD_PENALTY;
+// bool okCached;
+// if (PathCache_TryGetSimple(key, okCached))
+// return okCached ? 0.0 : PATH_NO_BUILD_PENALTY;
 
-//         bool ok = L4D2_NavAreaBuildPath(navGoal, navStart, limitCost, TEAM_INFECTED, false);
-//         PathCache_PutSimple(key, ok);
-//         return ok ? 0.0 : PATH_NO_BUILD_PENALTY;
-//     }
-
-//     // 不启用缓存：直接判定
-//     bool ok = L4D2_NavAreaBuildPath(navGoal, navStart, limitCost, TEAM_INFECTED, false);
-//     return ok ? 0.0 : PATH_NO_BUILD_PENALTY;
+// bool ok = L4D2_NavAreaBuildPath(navGoal, navStart, limitCost, TEAM_INFECTED, false);
+// PathCache_PutSimple(key, ok);
+// return ok ? 0.0 : PATH_NO_BUILD_PENALTY;
 // }
 
-// [MOD] —— 覆盖：无重叠、可读的 Flow 评分
+// // 不启用缓存：直接判定
+// bool ok = L4D2_NavAreaBuildPath(navGoal, navStart, limitCost, TEAM_INFECTED, false);
+// return ok ? 0.0 : PATH_NO_BUILD_PENALTY;
+// }
+
+// —— 覆盖：无重叠、可读的 Flow 评分
 // 语义：略微领先（+1..+5）最好；过远前方衰减；同进度中性；落后扣分。
 stock float ScoreFlowSmooth(int deltaFlow)
 {
@@ -2620,7 +2605,7 @@ stock float ScoreFlowSmooth(int deltaFlow)
     float s    = 40.0 / (1.0 + (over / 8.0));    // 40 → 渐近 0
     return 30.0 + clamp(s, 0.0, 40.0);           // 30..70（但很快收敛到 30~40）
 }
-// [修改] 解决 warning 219: local variable "recentSectors" shadows a variable
+// 解决 warning 219: local variable "recentSectors" shadows a variable
 stock float CalculateScore_Dispersion(int sidx, int preferredSector, const int a_recentSectors[3])
 {
     float k = PenLimitScale();                           // 1.00..0.50
@@ -2630,7 +2615,7 @@ stock float CalculateScore_Dispersion(int sidx, int preferredSector, const int a
     if (sidx == a_recentSectors[2]) return 0.0;
     return 50.0;
 }
-// [ADD] 负向分散度惩罚随上限 L 变弱（用你给的宏）
+// 负向分散度惩罚随上限 L 变弱（用你给的宏）
 stock float ComputePenScaleByLimit(int L)
 {
     int   Lc = clampi(L, PEN_LIMIT_MINL, PEN_LIMIT_MAXL);
@@ -2638,7 +2623,7 @@ stock float ComputePenScaleByLimit(int L)
     return PEN_LIMIT_SCALE_HI + (PEN_LIMIT_SCALE_LO - PEN_LIMIT_SCALE_HI) * t;
 }
 stock float ScaleNegativeOnly(float v, float k) { return (v < 0.0) ? (v * k) : v; }
-// [新增] —— 生成缓存 Key（NavAreaID + 量化后的 limitCost）
+// —— 生成缓存 Key（NavAreaID + 量化后的 limitCost）
 stock void  PathCache_BuildKey(Address navGoal, Address navStart, float limitCost, char[] outKey, int maxlen)
 {
     int idG = (navGoal != Address_Null) ? L4D_GetNavAreaID(navGoal) : -1;
@@ -2646,9 +2631,7 @@ stock void  PathCache_BuildKey(Address navGoal, Address navStart, float limitCos
     int q   = RoundToNearest(limitCost / fPathCacheQuantize);    // 量化，避免 key 激增
     Format(outKey, maxlen, "%d|%d|%d", idG, idS, q);
 }
-// =========================================================================
 // 环境 & 限制
-// =========================================================================
 
 void ApplyOptimizations()
 {
@@ -2662,7 +2645,7 @@ void ApplyOptimizations()
 void UnlockLimits()
 {
     // 1. 读取当前的 sd_max_si 值
-    // 无论是 CFG 加载的，还是你控制台手输入的，还是 API 改的，都以这个为准
+    // 无论是 CFG 加载的，还是你控制台手输入的，还是 接口 改的，都以这个为准
     int limit = g_cvMaxSI.IntValue;
 
     // 2. 基础安全范围 (防止设成 0 卡死或者设成 100 崩服)
@@ -2680,7 +2663,7 @@ void UnlockLimits()
     if ((cvar = FindConVar("z_minion_limit")) != null) cvar.SetInt(limit);
     if ((cvar = FindConVar("survival_max_specials")) != null) cvar.SetInt(limit);
 
-    // 4. [关键] 单类特感上限
+    // 4. 单类特感上限
     // 逻辑：如果是超级模式，所有单类上限直接解锁到总上限 (limit)，由代码比例控制。
     // 如果是普通模式，维持原版平衡 (牛=4, 胖=2)，或者你也可以选择全部放开让 sd_max_si 控制。
     // 这里我保持你想要的“超级模式下才解锁”的逻辑：
@@ -2695,7 +2678,7 @@ void UnlockLimits()
     if ((cvar = FindConVar("z_jockey_limit")) != null) cvar.SetInt(typeLimit);
     if ((cvar = FindConVar("z_charger_limit")) != null) cvar.SetInt(typeLimit);
 
-    // 5. [修正] 距离参数 - 不再暴力覆盖！
+    // 5. 距离参数 - 不再暴力覆盖！
     // 只有当这些参数真的不合理时（比如小于你设定的最小生成距离），才去修正它。
     // 现在的逻辑：将引擎的生成范围设得比你插件的 sd_dist_max 稍微大一点，给插件留出操作空间。
 
@@ -2733,45 +2716,45 @@ void LockLimits()
 // 安全区与队列
 // public void L4D_OnFirstSurvivorLeftSafeArea_Post(int client)
 // {
-//     if (g_bLeftSafeArea) return;
-//     g_bLeftSafeArea = true;
+// if (g_bLeftSafeArea) return;
+// g_bLeftSafeArea = true;
 
-//     // 1. 解锁限制
-//     UnlockLimits();
+// // 1. 解锁限制
+// UnlockLimits();
 
-//     int   maxSI    = g_cvMaxSI.IntValue;
-//     float interval = g_cvHungerCooldown.FloatValue;
-//     float distMin  = g_cvSpawnDistMin.FloatValue;
-//     float distMax  = g_cvSpawnDistMax.FloatValue;
+// int   maxSI    = g_cvMaxSI.IntValue;
+// float interval = g_cvHungerCooldown.FloatValue;
+// float distMin  = g_cvSpawnDistMin.FloatValue;
+// float distMax  = g_cvSpawnDistMax.FloatValue;
 
-//     // \x04 = 橙色/绿色(视服务器而定), \x01 = 白色, \x03 = 亮绿色
-//     PrintToChatAll("\x04[Sion]\x01 生还者离开安全区。");
-//     PrintToChatAll("\x04[配置]\x01 特感上限: \x03%d \x01只 | 刷新间隔: \x03%.1f \x01秒", maxSI, interval);
-//     PrintToChatAll("\x04[参数]\x01 生成距离: \x03%.0f \x01- \x03%.0f", distMin, distMax);
+// // \x04 = 橙色/绿色(视服务器而定), \x01 = 白色, \x03 = 亮绿色
+// PrintToChatAll("\x04\x01 生还者离开安全区。");
+// PrintToChatAll("\x04\x01 特感上限: \x03%d \x01只 | 刷新间隔: \x03%.1f \x01秒", maxSI, interval);
+// PrintToChatAll("\x04\x01 生成距离: \x03%.0f \x01- \x03%.0f", distMin, distMax);
 
-//     // 3. 清理旧计时器 (保持不变)
-//     if (g_hSpawnTimer != null)
-//     {
-//         KillTimer(g_hSpawnTimer);
-//         g_hSpawnTimer = null;
-//     }
-//     if (g_hCacheTimer != null)
-//     {
-//         KillTimer(g_hCacheTimer);
-//         g_hCacheTimer = null;
-//     }
-//     if (g_hQueueTimer != null)
-//     {
-//         KillTimer(g_hQueueTimer);
-//         g_hQueueTimer = null;
-//     }
+// // 3. 清理旧计时器 (保持不变)
+// if (g_hSpawnTimer != null)
+// {
+// KillTimer(g_hSpawnTimer);
+// g_hSpawnTimer = null;
+// }
+// if (g_hCacheTimer != null)
+// {
+// KillTimer(g_hCacheTimer);
+// g_hCacheTimer = null;
+// }
+// if (g_hQueueTimer != null)
+// {
+// KillTimer(g_hQueueTimer);
+// g_hQueueTimer = null;
+// }
 
-//     // 4. 启动逻辑 (保持不变)
-//     g_hCacheTimer = CreateTimer(0.2, Timer_UpdateDeltaCache, _, TIMER_REPEAT);
-//     SD_FullStateRefresh();
+// // 4. 启动逻辑 (保持不变)
+// g_hCacheTimer = CreateTimer(0.2, Timer_UpdateDeltaCache, _, TIMER_REPEAT);
+// SD_FullStateRefresh();
 
-//     // 10秒后才开始正式刷怪逻辑
-//     CreateTimer(10.0, Timer_StartCombatDelayed, _, TIMER_FLAG_NO_MAPCHANGE);
+// // 10秒后才开始正式刷怪逻辑
+// CreateTimer(10.0, Timer_StartCombatDelayed, _, TIMER_FLAG_NO_MAPCHANGE);
 // }
 public void L4D_OnFirstSurvivorLeftSafeArea_Post(int client)
 {
@@ -2789,7 +2772,7 @@ public void L4D_OnFirstSurvivorLeftSafeArea_Post(int client)
     PrintToChatAll("\x04[配置]\x01 特感上限: \x03%d \x01只 | 基准冷却: \x03%.1f \x01秒 \x05(动态)\x01", maxSI, interval);
     PrintToChatAll("\x04[参数]\x01 生成距离: \x03%.0f \x01- \x03%.0f", distMin, distMax);
 
-    // [难度系统] 出门播报
+    // 出门播报
     int  currentTier = g_cvDifficultyTier.IntValue;
     char desc[256];
     switch (currentTier)
@@ -2848,7 +2831,6 @@ public Action Timer_ProcessQueue(Handle timer)
         // --- 记账开始 ---
         // 告诉导演：这只怪已经下单了，虽然还没生出来，但别再补货了！
         g_iTotalPending++;
-        // ----------------
 
         // 尝试寻找位置
         int target = SD_GetBestStrategicTarget();
@@ -2874,62 +2856,62 @@ public Action Timer_ProcessQueue(Handle timer)
 
 // public Action Timer_ProcessQueue(Handle timer)
 // {
-//     if (!g_bLeftSafeArea) return Plugin_Continue;
-//     if (g_hSpawnQueue.Length == 0) return Plugin_Continue;
+// if (!g_bLeftSafeArea) return Plugin_Continue;
+// if (g_hSpawnQueue.Length == 0) return Plugin_Continue;
 
-//     // [核心修改] 爆发式生成 (Explosive Spawn)
-//     // 我们不再限制 batchSize 为 1 个或 2 个，而是尽可能在一个 tick 内把整队刷出来。
-//     // 为了防止服务器卡顿，我们设一个较高的硬上限 (比如 16)，这对于玩家来说就是"瞬间"。
+// // 爆发式生成 (Explosive Spawn)
+// // 我们不再限制 batchSize 为 1 个或 2 个，而是尽可能在一个 tick 内把整队刷出来。
+// // 为了防止服务器卡顿，我们设一个较高的硬上限 (比如 16)，这对于玩家来说就是"瞬间"。
 
-//     int burstLimit = g_cvMaxSI.IntValue;    // 这个上限可以根据 sd_max_si 调整，保持一致性
-//     int processed  = 0;
-//     int target     = g_iCachedBestTarget;
+// int burstLimit = g_cvMaxSI.IntValue;    // 这个上限可以根据 sd_max_si 调整，保持一致性
+// int processed  = 0;
+// int target     = g_iCachedBestTarget;
 
-//     // 如果缓存的目标失效了（极其罕见，比如这0.1秒内掉线），才重新算
-//     if (target <= 0 || !IsClientInGame(target)) target = SD_GetBestStrategicTarget();
-//     if (target <= 0) target = SD_GetRandomSurvivor();
+// // 如果缓存的目标失效了（极其罕见，比如这0.1秒内掉线），才重新算
+// if (target <= 0 || !IsClientInGame(target)) target = SD_GetBestStrategicTarget();
+// if (target <= 0) target = SD_GetRandomSurvivor();
 
-//     // 只要队列还有怪，且没达到防卡顿上限，就一直刷
-//     while (g_hSpawnQueue.Length > 0 && processed < burstLimit)
-//     {
-//         if (SD_GetSICount() >= g_cvMaxSI.IntValue)
-//         {
-//             // 甚至可以直接清空队列，防止堆积
-//             g_hSpawnQueue.Clear();
-//             // return Plugin_Continue;
-//             return Plugin_Continue;
-//         }
-//         // 1. 取出特感类型
-//         int class = g_hSpawnQueue.Get(0);
-//         g_hSpawnQueue.Erase(0);
-//         // 2. 锁定目标
-//         // 既然是爆发，我们需要针对性。
-//         // 如果是控制特感，优先找落单的或者 Leader；如果是 AOE，优先找人堆。
-//         // 这里为了简化且有效，统一使用"最佳战术目标"
-//         if (target > 0)
-//         {
-//             // 3. 尝试生成
-//             // 使用我们优化过的环形搜索，确保位置合理
-//             bool success = SD_SpawnWithNavBucket(class, target);
+// // 只要队列还有怪，且没达到防卡顿上限，就一直刷
+// while (g_hSpawnQueue.Length > 0 && processed < burstLimit)
+// {
+// if (SD_GetSICount() >= g_cvMaxSI.IntValue)
+// {
+// // 甚至可以直接清空队列，防止堆积
+// g_hSpawnQueue.Clear();
+// // return Plugin_Continue;
+// return Plugin_Continue;
+// }
+// // 1. 取出特感类型
+// int class = g_hSpawnQueue.Get(0);
+// g_hSpawnQueue.Erase(0);
+// // 2. 锁定目标
+// // 既然是爆发，我们需要针对性。
+// // 如果是控制特感，优先找落单的或者 Leader；如果是 AOE，优先找人堆。
+// // 这里为了简化且有效，统一使用"最佳战术目标"
+// if (target > 0)
+// {
+// // 3. 尝试生成
+// // 使用我们优化过的环形搜索，确保位置合理
+// bool success = SD_SpawnWithNavBucket(class, target);
 
-//             if (success)
-//             {
-//                 processed++;
-//             }
-//             else {
-//                 // 如果生成失败 (比如位置不好)，为了保证波次完整性，
-//                 // 我们应该把它放回队列头部，等待下一帧（0.1秒后）立刻重试
-//                 // 但为了防止死循环，我们把它放到队尾
-//                 // g_hSpawnQueue.Push(class); // (可选：如果觉得卡顿可以注释掉这行，失败就失败了)
+// if (success)
+// {
+// processed++;
+// }
+// else {
+// // 如果生成失败 (比如位置不好)，为了保证波次完整性，
+// // 我们应该把它放回队列头部，等待下一帧（0.1秒后）立刻重试
+// // 但为了防止死循环，我们把它放到队尾
+// // g_hSpawnQueue.Push(class); // (可选：如果觉得卡顿可以注释掉这行，失败就失败了)
 
-//                 // 为了保持高压，建议失败了就丢弃，不要阻塞队列，反正下一波马上就来
-//                 // 或者：把它转变为 Hunter (容错率高) 塞回去?
-//                 // 这里选择：不做任何事，跳过。保证流畅度。
-//             }
-//         }
-//     }
+// // 为了保持高压，建议失败了就丢弃，不要阻塞队列，反正下一波马上就来
+// // 或者：把它转变为 Hunter (容错率高) 塞回去?
+// // 这里选择：不做任何事，跳过。保证流畅度。
+// }
+// }
+// }
 
-//     return Plugin_Continue;
+// return Plugin_Continue;
 // }
 
 // 2. 纯随机 (无脑选一个活着的，作为最后的兜底)
@@ -2977,7 +2959,7 @@ public Action Event_RoundStart(Event event, const char[] name, bool dontBroadcas
         UpdateClientCache(i);
     CreateTimer(0.2, Timer_BuildNavBuckets_Delayed, _, TIMER_FLAG_NO_MAPCHANGE);
     StartPhantomTimer();
-    // [新增] 终点绝杀拌线触发标记
+    // 终点绝杀拌线触发标记
     g_bTerminalIntercept = false;
     return Plugin_Continue;
 }
@@ -3021,214 +3003,214 @@ public Action Event_RoundEnd(Event event, const char[] name, bool dontBroadcast)
 
 // public Action Timer_DirectorThink(Handle timer)
 // {
-//     if (!g_bLeftSafeArea) return Plugin_Continue;
-//     if (!SD_IsSurvivorTeamAlive()) return Plugin_Continue;
+// if (!g_bLeftSafeArea) return Plugin_Continue;
+// if (!SD_IsSurvivorTeamAlive()) return Plugin_Continue;
 
-//     SD_CullLaggingSI_Fast();
-//     float time = GetEngineTime();
+// SD_CullLaggingSI_Fast();
+// float time = GetEngineTime();
 
-//     // 1. Tank 逻辑 (保持不变)
-//     if (g_cvEnableTankControl.BoolValue)
-//     {
-//         if (!g_bTankSpawnedRound && time > g_fNextTankTime && !SD_IsTankAlive())
-//         {
-//             if (GetRandomInt(1, 100) <= g_cvTankChance.IntValue)
-//             {
-//                 int target = SD_GetBestStrategicTarget();
-//                 if (target > 0) SD_AttemptTankAssault(target);
-//             }
-//         }
-//     }
+// // 1. Tank 逻辑 (保持不变)
+// if (g_cvEnableTankControl.BoolValue)
+// {
+// if (!g_bTankSpawnedRound && time > g_fNextTankTime && !SD_IsTankAlive())
+// {
+// if (GetRandomInt(1, 100) <= g_cvTankChance.IntValue)
+// {
+// int target = SD_GetBestStrategicTarget();
+// if (target > 0) SD_AttemptTankAssault(target);
+// }
+// }
+// }
 
-//     // =========================================================
-//     // [核心修改] 波次刷新逻辑 (Wave Spawn)
-//     // =========================================================
+// // =========================================================
+// // 波次刷新逻辑 (Wave Spawn)
+// // =========================================================
 
-//     // 检查冷却
-//     if ((time - g_fLastSupplyTime) < g_cvHungerCooldown.FloatValue)
-//     {
-//         return Plugin_Continue;
-//     }
+// // 检查冷却
+// if ((time - g_fLastSupplyTime) < g_cvHungerCooldown.FloatValue)
+// {
+// return Plugin_Continue;
+// }
 
-//     // 统计当前场上特感数量 (活着 + 幽灵)
-//     int currentSI = SD_GetSICount();
-//     for (int i = 1; i <= 6; i++)
-//         currentSI += g_iSpawnGhosts[i];
+// // 统计当前场上特感数量 (活着 + 幽灵)
+// int currentSI = SD_GetSICount();
+// for (int i = 1; i <= 6; i++)
+// currentSI += g_iSpawnGhosts;
 
-//     // [关键阈值]
-//     // 只有当场上特感几乎死光 (<= 1只)，且队列也是空的
-//     // 才触发下一波"全军出击"
-//     int waveThreshold = g_cvMaxSI;
+// //
+// // 只有当场上特感几乎死光 (<= 1只)，且队列也是空的
+// // 才触发下一波"全军出击"
+// int waveThreshold = g_cvMaxSI;
 
-//     if (currentSI <= waveThreshold && g_hSpawnQueue.Length == 0)
-//     {
-//         // 生成整编小队 (调用新函数)
-//         SD_GenerateSquadWave();
+// if (currentSI <= waveThreshold && g_hSpawnQueue.Length == 0)
+// {
+// // 生成整编小队 (调用新函数)
+// SD_GenerateSquadWave();
 
-//         // 更新最后刷新时间
-//         g_fLastSupplyTime = time;
+// // 更新最后刷新时间
+// g_fLastSupplyTime = time;
 
-//         if (g_cvDebugMode.BoolValue)
-//         {
-//             SD_Log("[波次] 进攻波次已就绪！队列数: %d", g_hSpawnQueue.Length);
-//         }
-//     }
+// if (g_cvDebugMode.BoolValue)
+// {
+// SD_Log("进攻波次已就绪！队列数: %d", g_hSpawnQueue.Length);
+// }
+// }
 
-//     // 战术分析 (保留用于日志，但不影响刷怪)
-//     // if (time >= g_fNextSpawnTime) {
-//     //     g_fNextSpawnTime = time + g_cvSpawnInterval.FloatValue;
-//     //     SD_AnalyzeTacticalState();
-//     // }
+// // 战术分析 (保留用于日志，但不影响刷怪)
+// // if (time >= g_fNextSpawnTime) {
+// //     g_fNextSpawnTime = time + g_cvSpawnInterval.FloatValue;
+// //     SD_AnalyzeTacticalState();
+// // }
 
-//     return Plugin_Continue;
+// return Plugin_Continue;
 // }
 // public Action Timer_DirectorThink(Handle timer) {
-//     if (!g_bLeftSafeArea) return Plugin_Continue;
-//     if (!SD_IsSurvivorTeamAlive()) return Plugin_Continue;
+// if (!g_bLeftSafeArea) return Plugin_Continue;
+// if (!SD_IsSurvivorTeamAlive()) return Plugin_Continue;
 
-//     g_iCachedBestTarget = SD_GetBestStrategicTarget();
+// g_iCachedBestTarget = SD_GetBestStrategicTarget();
 
-//     // [高级优化] 分频处理：清理逻辑没必要每帧都跑
-//     // 0.1s * 5 = 0.5s 执行一次清理，节省 80% 的清理开销
-//     static int tickCounter = 0;
-//     if (++tickCounter >= 5) {
-//         SD_CullLaggingSI_Fast();
-//         tickCounter = 0;
-//     }
-//     float time = GetEngineTime();
+// // 分频处理：清理逻辑没必要每帧都跑
+// // 0.1s * 5 = 0.5s 执行一次清理，节省 80% 的清理开销
+// static int tickCounter = 0;
+// if (++tickCounter >= 5) {
+// SD_CullLaggingSI_Fast();
+// tickCounter = 0;
+// }
+// float time = GetEngineTime();
 
-//     // 1. Tank 逻辑 (保持不变)
-//     if (g_cvEnableTankControl.BoolValue) {
-//         if (!g_bTankSpawnedRound && time > g_fNextTankTime && !SD_IsTankAlive()) {
-//             if (GetRandomInt(1, 100) <= g_cvTankChance.IntValue) {
-//                 int target = SD_GetBestStrategicTarget();
-//                 if (target > 0) SD_AttemptTankAssault(target);
-//             }
-//         }
-//     }
+// // 1. Tank 逻辑 (保持不变)
+// if (g_cvEnableTankControl.BoolValue) {
+// if (!g_bTankSpawnedRound && time > g_fNextTankTime && !SD_IsTankAlive()) {
+// if (GetRandomInt(1, 100) <= g_cvTankChance.IntValue) {
+// int target = SD_GetBestStrategicTarget();
+// if (target > 0) SD_AttemptTankAssault(target);
+// }
+// }
+// }
 
-//     // =========================================================
-//     // [核心修改] 波次刷新逻辑 + 惊喜模式
-//     // =========================================================
+// // =========================================================
+// // 波次刷新逻辑 + 惊喜模式
+// // =========================================================
 
-//     // 统计当前场上特感数量 (活着 + 幽灵)
-//     int currentSI = SD_GetSICount();
-//     for(int i=1; i<=6; i++) currentSI += g_iSpawnGhosts[i];
+// // 统计当前场上特感数量 (活着 + 幽灵)
+// int currentSI = SD_GetSICount();
+// for(int i=1; i<=6; i++) currentSI += g_iSpawnGhosts;
 
-//     // 用于记录上一帧的特感数量，检测“团灭瞬间”
-//     static int lastFrameSICount = 0;
+// // 用于记录上一帧的特感数量，检测“团灭瞬间”
+// static int lastFrameSICount = 0;
 
-//     // 判断是否处于冷却中
-//     bool isCoolingDown = ((time - g_fLastSupplyTime) < g_cvHungerCooldown.FloatValue);
+// // 判断是否处于冷却中
+// bool isCoolingDown = ((time - g_fLastSupplyTime) < g_cvHungerCooldown.FloatValue);
 
-//     // --- [新增] 惊喜判定逻辑 ---
-//     // 触发条件：
-//     // 1. 上一帧还有怪 (last > 0) -> 这一帧没了 (current == 0) [检测到团灭瞬间]
-//     // 2. 且 队列是空的
-//     // 3. 且 处于冷却中 (即正常流程不会刷怪)
-//     // 4. 且 骰子中了
-//     if (lastFrameSICount > 0 && currentSI == 0 && g_hSpawnQueue.Length == 0) {
-//         if (isCoolingDown) {
-//             int chance = g_cvSurpriseChance.IntValue;
-//             if (chance > 0 && GetRandomInt(1, 100) <= chance) {
+// // --- 惊喜判定逻辑 ---
+// // 触发条件：
+// // 1. 上一帧还有怪 (last > 0) -> 这一帧没了 (current == 0)
+// // 2. 且 队列是空的
+// // 3. 且 处于冷却中 (即正常流程不会刷怪)
+// // 4. 且 骰子中了
+// if (lastFrameSICount > 0 && currentSI == 0 && g_hSpawnQueue.Length == 0) {
+// if (isCoolingDown) {
+// int chance = g_cvSurpriseChance.IntValue;
+// if (chance > 0 && GetRandomInt(1, 100) <= chance) {
 
-//                 // 触发惊喜！
-//                 SD_GenerateSurpriseWave(); // 生成全控
-//                 SD_TriggerSurpriseMob();   // 召唤尸潮
+// // 触发惊喜！
+// SD_GenerateSurpriseWave(); // 生成全控
+// SD_TriggerSurpriseMob();   // 召唤尸潮
 
-//                 // 重置冷却时间为当前时间
-//                 // 这样等这一波惊喜死完后，系统会重新开始计算冷却，避免无限连刷
-//                 g_fLastSupplyTime = time;
+// // 重置冷却时间为当前时间
+// // 这样等这一波惊喜死完后，系统会重新开始计算冷却，避免无限连刷
+// g_fLastSupplyTime = time;
 
-//                 // 更新状态并退出，等待 ProcessQueue 处理队列
-//                 lastFrameSICount = currentSI;
-//                 return Plugin_Continue;
-//             }
-//         }
-//     }
+// // 更新状态并退出，等待 ProcessQueue 处理队列
+// lastFrameSICount = currentSI;
+// return Plugin_Continue;
+// }
+// }
+// }
 
-//     // 更新历史记录
-//     lastFrameSICount = currentSI;
+// // 更新历史记录
+// lastFrameSICount = currentSI;
 
-//     // --- 正常刷新逻辑 ---
+// // --- 正常刷新逻辑 ---
 
-//     // 如果还在冷却，就暂停
-//     if (isCoolingDown) {
-//         return Plugin_Continue;
-//     }
+// // 如果还在冷却，就暂停
+// if (isCoolingDown) {
+// return Plugin_Continue;
+// }
 
-//     // [关键阈值] 正常补货
-//     // 只有当场上特感几乎死光 (<= 1只)，且队列也是空的
-//     int waveThreshold = g_cvMaxSI.IntValue; // 建议保持为 1
+// // 正常补货
+// // 只有当场上特感几乎死光 (<= 1只)，且队列也是空的
+// int waveThreshold = g_cvMaxSI.IntValue; // 建议保持为 1
 
-//     if (currentSI <= waveThreshold && g_hSpawnQueue.Length == 0) {
+// if (currentSI <= waveThreshold && g_hSpawnQueue.Length == 0) {
 
-//         SD_GenerateSquadWave();
+// SD_GenerateSquadWave();
 
-//         g_fLastSupplyTime = time;
+// g_fLastSupplyTime = time;
 
-//         if (g_cvDebugMode.BoolValue) {
-//             SD_Log("[波次] 进攻波次已就绪！队列数: %d", g_hSpawnQueue.Length);
-//         }
-//     }
+// if (g_cvDebugMode.BoolValue) {
+// SD_Log("进攻波次已就绪！队列数: %d", g_hSpawnQueue.Length);
+// }
+// }
 
-//     return Plugin_Continue;
+// return Plugin_Continue;
 // }
 // public Action Timer_DirectorThink(Handle timer) {
-//     if (!g_bLeftSafeArea) return Plugin_Continue;
-//     if (!SD_IsSurvivorTeamAlive()) return Plugin_Continue;
+// if (!g_bLeftSafeArea) return Plugin_Continue;
+// if (!SD_IsSurvivorTeamAlive()) return Plugin_Continue;
 
-//     SD_CullLaggingSI_Fast();
-//     float time = GetEngineTime();
+// SD_CullLaggingSI_Fast();
+// float time = GetEngineTime();
 
-//     // 1. Tank 逻辑 (保持不变)
-//     if (g_cvEnableTankControl.BoolValue) {
-//         if (!g_bTankSpawnedRound && time > g_fNextTankTime && !SD_IsTankAlive()) {
-//             if (GetRandomInt(1, 100) <= g_cvTankChance.IntValue) {
-//                 int target = SD_GetBestStrategicTarget();
-//                 if (target > 0) SD_AttemptTankAssault(target);
-//             }
-//         }
-//     }
+// // 1. Tank 逻辑 (保持不变)
+// if (g_cvEnableTankControl.BoolValue) {
+// if (!g_bTankSpawnedRound && time > g_fNextTankTime && !SD_IsTankAlive()) {
+// if (GetRandomInt(1, 100) <= g_cvTankChance.IntValue) {
+// int target = SD_GetBestStrategicTarget();
+// if (target > 0) SD_AttemptTankAssault(target);
+// }
+// }
+// }
 
-//     // =========================================================
-//     // [核心修改] 波次刷新逻辑 (Wave Spawn)
-//     // =========================================================
+// // =========================================================
+// // 波次刷新逻辑 (Wave Spawn)
+// // =========================================================
 
-//     // 检查冷却
-//     if ((time - g_fLastSupplyTime) < g_cvHungerCooldown.FloatValue) {
-//         return Plugin_Continue;
-//     }
+// // 检查冷却
+// if ((time - g_fLastSupplyTime) < g_cvHungerCooldown.FloatValue) {
+// return Plugin_Continue;
+// }
 
-//     // 统计当前场上特感数量 (活着 + 幽灵)
-//     int currentSI = SD_GetSICount();
-//     for(int i=1; i<=6; i++) currentSI += g_iSpawnGhosts[i];
+// // 统计当前场上特感数量 (活着 + 幽灵)
+// int currentSI = SD_GetSICount();
+// for(int i=1; i<=6; i++) currentSI += g_iSpawnGhosts;
 
-//     // [关键阈值]
-//     // 只有当场上特感几乎死光 (<= 1只)，且队列也是空的
-//     // 才触发下一波"全军出击"
-//     int waveThreshold = g_cvMaxSI.IntValue - 2;
+// //
+// // 只有当场上特感几乎死光 (<= 1只)，且队列也是空的
+// // 才触发下一波"全军出击"
+// int waveThreshold = g_cvMaxSI.IntValue - 2;
 
-//     if (currentSI <= waveThreshold && g_hSpawnQueue.Length == 0) {
+// if (currentSI <= waveThreshold && g_hSpawnQueue.Length == 0) {
 
-//         // 生成整编小队 (调用新函数)
-//         SD_GenerateSquadWave();
+// // 生成整编小队 (调用新函数)
+// SD_GenerateSquadWave();
 
-//         // 更新最后刷新时间
-//         g_fLastSupplyTime = time;
+// // 更新最后刷新时间
+// g_fLastSupplyTime = time;
 
-//         if (g_cvDebugMode.BoolValue) {
-//             SD_Log("[波次] 进攻波次已就绪！队列数: %d", g_hSpawnQueue.Length);
-//         }
-//     }
+// if (g_cvDebugMode.BoolValue) {
+// SD_Log("进攻波次已就绪！队列数: %d", g_hSpawnQueue.Length);
+// }
+// }
 
-//     // 战术分析 (保留用于日志，但不影响刷怪)
-//     // if (time >= g_fNextSpawnTime) {
-//     //     g_fNextSpawnTime = time + g_cvSpawnInterval.FloatValue;
-//     //     SD_AnalyzeTacticalState();
-//     // }
+// // 战术分析 (保留用于日志，但不影响刷怪)
+// // if (time >= g_fNextSpawnTime) {
+// //     g_fNextSpawnTime = time + g_cvSpawnInterval.FloatValue;
+// //     SD_AnalyzeTacticalState();
+// // }
 
-//     return Plugin_Continue;
+// return Plugin_Continue;
 // }
 public Action Timer_DirectorThink(Handle timer)
 {
@@ -3248,7 +3230,7 @@ public Action Timer_DirectorThink(Handle timer)
 
     SD_CullLaggingSI_Fast();
 
-    // [动态冷却] 根据存活人数自动调整补货间隔
+    // 根据存活人数自动调整补货间隔
     float dynamicCD = SD_GetDynamicCooldown();
     if ((time - g_fLastSupplyTime) < dynamicCD) return Plugin_Continue;
 
@@ -3258,9 +3240,7 @@ public Action Timer_DirectorThink(Handle timer)
     if (currentTotal >= maxSI || g_hSpawnQueue.Length > 0) return Plugin_Continue;
 
     SD_GenerateSquadWave();
-    // =========================================================
-    // [难度系统] 特殊尸潮机制
-    // =========================================================
+    // 特殊尸潮机制
     int currentTier = g_cvDifficultyTier.IntValue;
 
     // 第5/6档：Tank 存活时的无限尸潮 (15秒一波)
@@ -3273,9 +3253,7 @@ public Action Timer_DirectorThink(Handle timer)
             if (g_cvDebugMode.BoolValue) SD_Log("[第%d档] Tank存活，强制触发15s循环尸潮！", currentTier);
         }
     }
-    // ---------------------------------------------------------
-    // [终极绝杀] 96% 进度拌线：大清洗与瞬间拦截 (无论几档都可触发，或者你可以加个档位限制)
-    // ---------------------------------------------------------
+    // 96% 进度拌线：大清洗与瞬间拦截 (无论几档都可触发，或者你可以加个档位限制)
     int bestSurv = GetHighestFlowSurvivorSafe();
     int pct      = 0;
     if (IsValidSurvFast(bestSurv) && TryGetClientFlowPercentSafe(bestSurv, pct))
@@ -3324,14 +3302,14 @@ public Action Timer_DirectorThink(Handle timer)
             }
             SD_ShuffleQueue(g_hSpawnQueue);
 
-            // 3. [极其关键] 剥夺冷却时间
+            // 3. 剥夺冷却时间
             // 把最后供货时间重置为 0，这会导致 Timer_ProcessQueue 瞬间像疯狗一样开始派单
             g_fLastSupplyTime  = 0.0;
             g_fLastTankMobTime = time;    // 顺手召唤一波尸潮
             SD_TriggerSurpriseMob();
 
             // 4. 气势拉满的提示
-            // PrintToChatAll("\x04[Sion]\x01 警告：\x03检测到生还者逼近终点，启动终局拦截程序！");
+            // PrintToChatAll("\x04\x01 警告：\x03检测到生还者逼近终点，启动终局拦截程序！");
             if (g_cvDebugMode.BoolValue)
             {
                 SD_Log("[终局绝杀] 96%% 拌线触发！处死了 %d 只没用的特感，瞬间向前方空投全控阵容！", culledCount);
@@ -3353,7 +3331,6 @@ public Action Timer_DirectorThink(Handle timer)
             }
         }
     }
-    // =========================================================
 
     if (g_hSpawnQueue.Length > 0)
     {
@@ -3385,136 +3362,136 @@ public Action Timer_DirectorThink(Handle timer)
 
     return Plugin_Continue;
 }
-// [核心修改] 定时波次 + 概率尸潮
+// 定时波次 + 概率尸潮
 // public Action Timer_DirectorThink(Handle timer)
 // {
-//     // 1. 基础状态检查
-//     if (!g_bLeftSafeArea) return Plugin_Continue;
-//     if (!SD_IsSurvivorTeamAlive()) return Plugin_Continue;
+// // 1. 基础状态检查
+// if (!g_bLeftSafeArea) return Plugin_Continue;
+// if (!SD_IsSurvivorTeamAlive()) return Plugin_Continue;
 
-//     float time = GetEngineTime();
+// float time = GetEngineTime();
 
-//     // =========================================================
-//     // [关键修复] 安全阀 (Watchdog) - 必须放在任何生成逻辑之前
-//     // =========================================================
-//     // 只有在"休息期"（队列为空）才检查。
-//     // 如果距离上次补货超过5秒，队列也是空的，但 Pending 还不为0，说明卡单了。
-//     if (g_hSpawnQueue.Length == 0)
-//     {
-//         if ((time - g_fLastSupplyTime) > 5.0)
-//         {
-//             if (g_iTotalPending > 0)
-//             {
-//                 if (g_cvDebugMode.BoolValue)
-//                 {
-//                     SD_Log("[Safety] 检测到 Pending 烂账: %d 个. 强制修正为 0.", g_iTotalPending);
-//                 }
-//                 g_iTotalPending = 0;    // 强制归零，防止永久占位
-//             }
-//         }
-//     }
+// // =========================================================
+// // 安全阀 (Watchdog) - 必须放在任何生成逻辑之前
+// // =========================================================
+// // 只有在"休息期"（队列为空）才检查。
+// // 如果距离上次补货超过5秒，队列也是空的，但 Pending 还不为0，说明卡单了。
+// if (g_hSpawnQueue.Length == 0)
+// {
+// if ((time - g_fLastSupplyTime) > 5.0)
+// {
+// if (g_iTotalPending > 0)
+// {
+// if (g_cvDebugMode.BoolValue)
+// {
+// SD_Log("检测到 Pending 烂账: %d 个. 强制修正为 0.", g_iTotalPending);
+// }
+// g_iTotalPending = 0;    // 强制归零，防止永久占位
+// }
+// }
+// }
 
-//     // 2. 清理卡住的特感
-//     SD_CullLaggingSI_Fast();
+// // 2. 清理卡住的特感
+// SD_CullLaggingSI_Fast();
 
-//     // =========================================================
-//     // 波次刷新 + 概率尸潮逻辑
-//     // =========================================================
+// // =========================================================
+// // 波次刷新 + 概率尸潮逻辑
+// // =========================================================
 
-//     // 3. 严格的时间检查 (不到时间绝对不刷)
-//     if ((time - g_fLastSupplyTime) < g_cvHungerCooldown.FloatValue)
-//     {
-//         return Plugin_Continue;
-//     }
+// // 3. 严格的时间检查 (不到时间绝对不刷)
+// if ((time - g_fLastSupplyTime) < g_cvHungerCooldown.FloatValue)
+// {
+// return Plugin_Continue;
+// }
 
-//     // 4. 检查空位 (防止溢出)
-//     // 此时 SD_GetTotalSI_Strict() 会包含 g_iTotalPending (此时它已经被安全阀修正过了，是准确的)
-//     int currentTotal = SD_GetTotalSI_Strict();
-//     int maxSI        = g_cvMaxSI.IntValue;
+// // 4. 检查空位 (防止溢出)
+// // 此时 SD_GetTotalSI_Strict() 会包含 g_iTotalPending (此时它已经被安全阀修正过了，是准确的)
+// int currentTotal = SD_GetTotalSI_Strict();
+// int maxSI        = g_cvMaxSI.IntValue;
 
-//     if (currentTotal >= maxSI || g_hSpawnQueue.Length > 0)
-//     {
-//         return Plugin_Continue;
-//     }
+// if (currentTotal >= maxSI || g_hSpawnQueue.Length > 0)
+// {
+// return Plugin_Continue;
+// }
 
-//     // 5. 触发特感生成 (填满队列)
-//     SD_GenerateSquadWave();
+// // 5. 触发特感生成 (填满队列)
+// SD_GenerateSquadWave();
 
-//     // 6. 只要成功生成了特感任务（意味着新的一波开始了）
-//     if (g_hSpawnQueue.Length > 0)
-//     {
-//         g_fLastSupplyTime = time;    // 重置补货冷却
+// // 6. 只要成功生成了特感任务（意味着新的一波开始了）
+// if (g_hSpawnQueue.Length > 0)
+// {
+// g_fLastSupplyTime = time;    // 重置补货冷却
 
-//         // --- [伴随尸潮逻辑] ---
-//         // 只有在特感进攻时，才顺便判定是否起尸潮
+// // --- ---
+// // 只有在特感进攻时，才顺便判定是否起尸潮
 
-//         // 检查冷却：只有 (当前时间 - 上次尸潮时间) > 冷却设定值 时
-//         if ((time - g_fLastMobTime) > g_cvmobcooldown.FloatValue)
-//         {
-//             // 获取当前路程的前方尸潮概率
-//             int mobChance = GetLogicChance_MobFront();
+// // 检查冷却：只有 (当前时间 - 上次尸潮时间) > 冷却设定值 时
+// if ((time - g_fLastMobTime) > g_cvmobcooldown.FloatValue)
+// {
+// // 获取当前路程的前方尸潮概率
+// int mobChance = GetLogicChance_MobFront();
 
-//             // 掷骰子判定
-//             if (mobChance > 0 && GetRandomInt(1, 100) <= mobChance)
-//             {
-//                 // 触发前方尸潮！
-//                 SD_TriggerSurpriseMob();
+// // 掷骰子判定
+// if (mobChance > 0 && GetRandomInt(1, 100) <= mobChance)
+// {
+// // 触发前方尸潮！
+// SD_TriggerSurpriseMob();
 
-//                 // [关键] 更新最后触发时间，重置 CD
-//                 g_fLastMobTime = time;
+// // 更新最后触发时间，重置 CD
+// g_fLastMobTime = time;
 
-//                 if (g_cvDebugMode.BoolValue)
-//                 {
-//                     SD_Log("[导演] 路程尸潮判定成功! (概率: %d%%) -> 尸潮伴随进攻", mobChance);
-//                 }
-//             }
-//             else
-//             {
-//                 // 概率没中
-//                 if (g_cvDebugMode.BoolValue)
-//                 {
-//                     SD_Log("[波次] 标准特感波次 (无尸潮 - 概率未中). 下次: %.1f秒", g_cvHungerCooldown.FloatValue);
-//                 }
-//             }
-//         }
-//         else
-//         {
-//             // 还在冷却中
-//             if (g_cvDebugMode.BoolValue)
-//             {
-//                 float remaining = g_cvmobcooldown.FloatValue - (time - g_fLastMobTime);
-//                 SD_Log("[波次] 标准特感波次 (尸潮冷却中: 剩余 %.1f秒).", remaining);
-//             }
-//         }
-//     }
+// if (g_cvDebugMode.BoolValue)
+// {
+// SD_Log("路程尸潮判定成功! (概率: %d%%) -> 尸潮伴随进攻", mobChance);
+// }
+// }
+// else
+// {
+// // 概率没中
+// if (g_cvDebugMode.BoolValue)
+// {
+// SD_Log("标准特感波次 (无尸潮 - 概率未中). 下次: %.1f秒", g_cvHungerCooldown.FloatValue);
+// }
+// }
+// }
+// else
+// {
+// // 还在冷却中
+// if (g_cvDebugMode.BoolValue)
+// {
+// float remaining = g_cvmobcooldown.FloatValue - (time - g_fLastMobTime);
+// SD_Log("标准特感波次 (尸潮冷却中: 剩余 %.1f秒).", remaining);
+// }
+// }
+// }
 
-//     // =========================================================
-//     // Tank 逻辑 (保持不变)
-//     // =========================================================
-//     if (g_cvEnableTankControl.BoolValue)
-//     {
-//         if (!g_bTankSpawnedRound && time > g_fNextTankTime && !SD_IsTankAlive())
-//         {
-//             if (GetRandomInt(1, 100) <= g_cvTankChance.IntValue)
-//             {
-//                 int target = SD_GetBestStrategicTarget();
-//                 if (target > 0) SD_AttemptTankAssault(target);
-//             }
-//         }
-//     }
+// // =========================================================
+// // Tank 逻辑 (保持不变)
+// // =========================================================
+// if (g_cvEnableTankControl.BoolValue)
+// {
+// if (!g_bTankSpawnedRound && time > g_fNextTankTime && !SD_IsTankAlive())
+// {
+// if (GetRandomInt(1, 100) <= g_cvTankChance.IntValue)
+// {
+// int target = SD_GetBestStrategicTarget();
+// if (target > 0) SD_AttemptTankAssault(target);
+// }
+// }
+// }
 
-//     return Plugin_Continue;
+// return Plugin_Continue;
 // }
 public Action L4D_OnGetScriptValueInt(const char[] key, int &retVal)
 {
-    // 1. [新增] 尸潮方向控制 (惊喜模式)
+    // 1. 尸潮方向控制 (惊喜模式)
     if (g_bForceMobFront && StrEqual(key, "PreferredMobDirection", false))
     {
         retVal = 7;    // SPAWN_IN_FRONT_OF_SURVIVORS
         return Plugin_Handled;
     }
 
-    // 2. [原有] 配合你自定义的寻位逻辑
+    // 2. 配合你自定义的寻位逻辑
     if (g_bIsPluginSpawning)
     {
         if (StrEqual(key, "PreferredSpecialDirection", false))
@@ -3529,10 +3506,8 @@ public Action L4D_OnGetScriptValueInt(const char[] key, int &retVal)
         }
     }
 
-    // ==========================================================
-    // 3. [核心剥夺] 彻底切断原生导演的特感刷新能力！
+    // 3. 彻底切断原生导演的特感刷新能力！
     // 只要原生导演（或地图机关）试图查询配额，永远返回 0。
-    // ==========================================================
     switch (key[0])
     {
         case 'M':
@@ -3625,7 +3600,7 @@ public Action L4D_OnGetScriptValueInt(const char[] key, int &retVal)
     }
     return Plugin_Continue;
 }
-// [核心] 缓存更新函数 (必须替换原版)
+// 缓存更新函数 (必须替换原版)
 void UpdateClientCache(int client)
 {
     if (IsValidClient(client))
@@ -3760,7 +3735,7 @@ public Action Timer_UpdateDeltaCache(Handle timer)
             float currentPos[3];
             GetClientAbsOrigin(i, currentPos);
 
-            // [优化] 使用 true 参数获取平方距离，比较 100*100 = 10000
+            // 使用 true 参数获取平方距离，比较 100*100 = 10000
             // 避免了 expensive 的 sqrt 运算
             if (GetVectorDistance(currentPos, g_vLastFlowPos[i], true) > 10000.0)
             {
@@ -3787,7 +3762,7 @@ int SD_GetBestStrategicTarget()
         {
             if (g_bIsIncap[i]) continue;
             if (g_bIsPinned[i]) continue;
-            // if (g_bIsBiled[i]) continue;
+            // if (g_bIsBiled) continue;
             float flow = g_fFlowCache[i];
             if (flow > maxFlow)
             {
@@ -3802,7 +3777,7 @@ void SD_CullLaggingSI_Fast()
 {
     if (g_iInfectedMask == 0) return;
 
-    // [核心修复 2] 动态保护：处死距离绝对不能小于你的最大生成距离！
+    // 动态保护：处死距离绝对不能小于你的最大生成距离！
     float cullDist    = g_cvCullDistance.FloatValue;
     float safeMinDist = g_cvSpawnDistMax.FloatValue + 300.0;    // 留出 300 码的缓冲区
     if (cullDist < safeMinDist) cullDist = safeMinDist;
@@ -3836,9 +3811,7 @@ void SD_CullLaggingSI_Fast()
             // 正在控人的特感绝对不杀
             if (SD_IsSIPinning(i)) continue;
 
-            // =======================================================
-            // [终极修复] 原地罚站强制抹杀（带防误杀判定）
-            // =======================================================
+            // 原地罚站强制抹杀（带防误杀判定）
             // if (!IsFakeClient(i)) continue;    // 保护真人特感玩家
 
             float vel[3];
@@ -3861,7 +3834,6 @@ void SD_CullLaggingSI_Fast()
                     continue;    // 已经处死，直接跳过后续判断
                 }
             }
-            // =======================================================
 
             float siPos[3];
             GetClientAbsOrigin(i, siPos);
@@ -3883,7 +3855,6 @@ void SD_CullLaggingSI_Fast()
             float siFlow   = L4D2Direct_GetFlowDistance(i);
             bool  isBehind = (siFlow != -9999.0 && siFlow < leaderFlow);
 
-            // [逻辑分流]
             if (isBehind)
             {
                 // 1. 落后处死：只要它被甩在队伍后面，且距离 > cullDist，立刻处死腾槽位
@@ -3907,183 +3878,183 @@ void SD_CullLaggingSI_Fast()
 }
 // void SD_CullLaggingSI_Fast()
 // {
-//     if (g_iInfectedMask == 0) return;
+// if (g_iInfectedMask == 0) return;
 
-//     // [核心修复 2] 动态保护：处死距离绝对不能小于你的最大生成距离！
-//     float cullDist = g_cvCullDistance.FloatValue;
-//     float safeMinDist = g_cvSpawnDistMax.FloatValue + 300.0; // 留出 300 码的缓冲区
-//     if (cullDist < safeMinDist) cullDist = safeMinDist;
+// // 动态保护：处死距离绝对不能小于你的最大生成距离！
+// float cullDist = g_cvCullDistance.FloatValue;
+// float safeMinDist = g_cvSpawnDistMax.FloatValue + 300.0; // 留出 300 码的缓冲区
+// if (cullDist < safeMinDist) cullDist = safeMinDist;
 
-//     float cullDistSq         = cullDist * cullDist;
-//     // 前方特感的容忍度放宽到 3 倍，防止辛苦跑图刷出来的前方怪被杀
-//     float cullDistSqForward  = (cullDist * 3.0) * (cullDist * 3.0);
+// float cullDistSq         = cullDist * cullDist;
+// // 前方特感的容忍度放宽到 3 倍，防止辛苦跑图刷出来的前方怪被杀
+// float cullDistSqForward  = (cullDist * 3.0) * (cullDist * 3.0);
 
-//     float time               = GetEngineTime();
-//     float leaderFlow         = 0.0;
-//     int   activeSurvivors    = 0;
+// float time               = GetEngineTime();
+// float leaderFlow         = 0.0;
+// int   activeSurvivors    = 0;
 
-//     // 找 Leader Flow
-//     for (int i = 1; i <= MaxClients; i++)
-//     {
-//         if ((g_iSurvivorMask & (1 << i)) && !g_bIsIncap[i])
-//         {
-//             float f = g_fFlowCache[i];
-//             if (f > leaderFlow) leaderFlow = f;
-//             activeSurvivors++;
-//         }
-//     }
-//     if (activeSurvivors == 0) leaderFlow = g_fLastMaxFlow;
+// // 找 Leader Flow
+// for (int i = 1; i <= MaxClients; i++)
+// {
+// if ((g_iSurvivorMask & (1 << i)) && !g_bIsIncap)
+// {
+// float f = g_fFlowCache;
+// if (f > leaderFlow) leaderFlow = f;
+// activeSurvivors++;
+// }
+// }
+// if (activeSurvivors == 0) leaderFlow = g_fLastMaxFlow;
 
-//     for (int i = 1; i <= MaxClients; i++)
-//     {
-//         if (g_iInfectedMask & (1 << i))
-//         {
-//             // 刚刷出来 10 秒内绝对不清理
-//             if (time - g_fSpawnTime[i] < 8.0) continue;
-//             if (SD_IsSIPinning(i)) continue;
+// for (int i = 1; i <= MaxClients; i++)
+// {
+// if (g_iInfectedMask & (1 << i))
+// {
+// // 刚刷出来 10 秒内绝对不清理
+// if (time - g_fSpawnTime< 8.0) continue;
+// if (SD_IsSIPinning(i)) continue;
 
-//             float siPos[3];
-//             GetClientAbsOrigin(i, siPos);
-//             float nearestActiveDistSq = 9999999999.0;
+// float siPos;
+// GetClientAbsOrigin(i, siPos);
+// float nearestActiveDistSq = 9999999999.0;
 
-//             // 检查最近的生还者距离
-//             for (int j = 1; j <= MaxClients; j++)
-//             {
-//                 if ((g_iSurvivorMask & (1 << j)) && !g_bIsIncap[j])
-//                 {
-//                     float dSq = GetVectorDistance(siPos, g_vLastFlowPos[j], true);
-//                     if (dSq < nearestActiveDistSq) nearestActiveDistSq = dSq;
-//                 }
-//             }
+// // 检查最近的生还者距离
+// for (int j = 1; j <= MaxClients; j++)
+// {
+// if ((g_iSurvivorMask & (1 << j)) && !g_bIsIncap)
+// {
+// float dSq = GetVectorDistance(siPos, g_vLastFlowPos, true);
+// if (dSq < nearestActiveDistSq) nearestActiveDistSq = dSq;
+// }
+// }
 
-//             // 距离生还者足够近，说明已参战，不清理
-//             if (nearestActiveDistSq < cullDistSq) continue;
+// // 距离生还者足够近，说明已参战，不清理
+// if (nearestActiveDistSq < cullDistSq) continue;
 
-//             float siFlow = L4D2Direct_GetFlowDistance(i);
-//             bool isBehind = (siFlow != -9999.0 && siFlow < leaderFlow);
+// float siFlow = L4D2Direct_GetFlowDistance(i);
+// bool isBehind = (siFlow != -9999.0 && siFlow < leaderFlow);
 
-//             // [逻辑分流]
-//             if (isBehind)
-//             {
-//                 // 1. 落后处死：只要它被甩在队伍后面，且距离 > cullDist，立刻处死腾槽位
-//                 ForcePlayerSuicide(i);
-//                 continue;
-//             }
-//             else
-//             {
-//                 // 2. 视野检测保护：即使在前方，只要被玩家看到了就留着它
-//                 if (GetEntProp(i, Prop_Send, "m_hasVisibleThreats") > 0) continue;
+// //
+// if (isBehind)
+// {
+// // 1. 落后处死：只要它被甩在队伍后面，且距离 > cullDist，立刻处死腾槽位
+// ForcePlayerSuicide(i);
+// continue;
+// }
+// else
+// {
+// // 2. 视野检测保护：即使在前方，只要被玩家看到了就留着它
+// if (GetEntProp(i, Prop_Send, "m_hasVisibleThreats") > 0) continue;
 
-//                 // [核心修复 3] 前方过远处死：只有当它在正前方发呆且离玩家极远 (3倍处死距离外)，才杀掉防止卡图
-//                 if (nearestActiveDistSq > cullDistSqForward)
-//                 {
-//                     ForcePlayerSuicide(i);
-//                     continue;
-//                 }
-//             }
-//         }
-//     }
+// // 前方过远处死：只有当它在正前方发呆且离玩家极远 (3倍处死距离外)，才杀掉防止卡图
+// if (nearestActiveDistSq > cullDistSqForward)
+// {
+// ForcePlayerSuicide(i);
+// continue;
+// }
+// }
+// }
+// }
 // }
 // void SD_CullLaggingSI_Fast()
 // {
-//     // 如果掩码为0，说明没特感，直接跳过
-//     if (g_iInfectedMask == 0) return;
+// // 如果掩码为0，说明没特感，直接跳过
+// if (g_iInfectedMask == 0) return;
 
-//     float cullDist = g_cvCullDistance.FloatValue;
-//     if (cullDist < 800.0) cullDist = 800.0;
-//     float cullDistSq         = cullDist * cullDist;
-//     float cullDistSqExtended = (cullDist * 1.5) * (cullDist * 1.5);
-//     float time               = GetEngineTime();
-//     float leaderFlow         = 0.0;
-//     int   activeSurvivors    = 0;
+// float cullDist = g_cvCullDistance.FloatValue;
+// if (cullDist < 800.0) cullDist = 800.0;
+// float cullDistSq         = cullDist * cullDist;
+// float cullDistSqExtended = (cullDist * 1.5) * (cullDist * 1.5);
+// float time               = GetEngineTime();
+// float leaderFlow         = 0.0;
+// int   activeSurvivors    = 0;
 
-//     // 找 Leader Flow
-//     for (int i = 1; i <= MaxClients; i++)
-//     {
-//         if ((g_iSurvivorMask & (1 << i)) && !g_bIsIncap[i])
-//         {
-//             float f = g_fFlowCache[i];
-//             if (f > leaderFlow) leaderFlow = f;
-//             activeSurvivors++;
-//         }
-//     }
-//     if (activeSurvivors == 0) leaderFlow = g_fLastMaxFlow;
+// // 找 Leader Flow
+// for (int i = 1; i <= MaxClients; i++)
+// {
+// if ((g_iSurvivorMask & (1 << i)) && !g_bIsIncap)
+// {
+// float f = g_fFlowCache;
+// if (f > leaderFlow) leaderFlow = f;
+// activeSurvivors++;
+// }
+// }
+// if (activeSurvivors == 0) leaderFlow = g_fLastMaxFlow;
 
-//     // [优化] 直接遍历特感掩码，不通过 Native 循环
-//     for (int i = 1; i <= MaxClients; i++)
-//     {
-//         // 只要位是 1，就说明：在游戏里活着有特感
-//         if (g_iInfectedMask & (1 << i))
-//         {
-//             // 刚刷出来 10 秒内不清理
-//             if (time - g_fSpawnTime[i] < 10.0) continue;
-//             if (SD_IsSIPinning(i)) continue;
+// // 直接遍历特感掩码，不通过 原生函数 循环
+// for (int i = 1; i <= MaxClients; i++)
+// {
+// // 只要位是 1，就说明：在游戏里活着有特感
+// if (g_iInfectedMask & (1 << i))
+// {
+// // 刚刷出来 10 秒内不清理
+// if (time - g_fSpawnTime< 10.0) continue;
+// if (SD_IsSIPinning(i)) continue;
 
-//             float siPos[3];
-//             GetClientAbsOrigin(i, siPos);
-//             float nearestActiveDistSq = 9999999999.0;
+// float siPos;
+// GetClientAbsOrigin(i, siPos);
+// float nearestActiveDistSq = 9999999999.0;
 
-//             // 检查所有生还者距离
-//             for (int j = 1; j <= MaxClients; j++)
-//             {
-//                 if ((g_iSurvivorMask & (1 << j)) && !g_bIsIncap[j])
-//                 {
-//                     float dSq = GetVectorDistance(siPos, g_vLastFlowPos[j], true);
-//                     if (dSq < nearestActiveDistSq) nearestActiveDistSq = dSq;
-//                 }
-//             }
+// // 检查所有生还者距离
+// for (int j = 1; j <= MaxClients; j++)
+// {
+// if ((g_iSurvivorMask & (1 << j)) && !g_bIsIncap)
+// {
+// float dSq = GetVectorDistance(siPos, g_vLastFlowPos, true);
+// if (dSq < nearestActiveDistSq) nearestActiveDistSq = dSq;
+// }
+// }
 
-//             if (nearestActiveDistSq < cullDistSq) continue;
+// if (nearestActiveDistSq < cullDistSq) continue;
 
-//             // 落后者清理
-//             float siFlow = L4D2Direct_GetFlowDistance(i);
-//             if (siFlow != -9999.0 && siFlow < leaderFlow)
-//             {
-//                 ForcePlayerSuicide(i);
-//                 continue;
-//             }
+// // 落后者清理
+// float siFlow = L4D2Direct_GetFlowDistance(i);
+// if (siFlow != -9999.0 && siFlow < leaderFlow)
+// {
+// ForcePlayerSuicide(i);
+// continue;
+// }
 
-//             // 视野检测清理
-//             if (GetEntProp(i, Prop_Send, "m_hasVisibleThreats") > 0) continue;
-//             if (nearestActiveDistSq > cullDistSqExtended)
-//             {
-//                 ForcePlayerSuicide(i);
-//                 continue;
-//             }
-//         }
-//     }
+// // 视野检测清理
+// if (GetEntProp(i, Prop_Send, "m_hasVisibleThreats") > 0) continue;
+// if (nearestActiveDistSq > cullDistSqExtended)
+// {
+// ForcePlayerSuicide(i);
+// continue;
+// }
+// }
+// }
 // }
 // void SD_AttemptTankAssault(int target)
 // {
-//     // 1. 基础检查：如果有 Tank 了、或者目标无效，直接退出
-//     if (g_bTankSpawnedRound || SD_IsTankAlive() || target <= 0) return;
+// // 1. 基础检查：如果有 Tank 了、或者目标无效，直接退出
+// if (g_bTankSpawnedRound || SD_IsTankAlive() || target <= 0) return;
 
-//     float pos[3];    // 用于接收坐标
+// float pos;    // 用于接收坐标
 
-//     // 2. 调用你的新寻位函数
-//     // 建议：minRange 设为 600.0 (太近会刷脸)，maxRange 设为 1500.0 (太远赶不过来)
-//     // 函数返回 true 说明找到了位置，坐标已存入 pos
-//     if (SD_FindNavSpawnPos_Advanced(target, 400.0, 1500.0, false, pos))
-//     {
-//         // 3. 生成逻辑
-//         // 注意：pos 已经被上面的函数赋值了，直接传给 L4D2_SpawnTank
-//         L4D2_SpawnTank(pos, NULL_VECTOR);
+// // 2. 调用你的新寻位函数
+// // 建议：minRange 设为 600.0 (太近会刷脸)，maxRange 设为 1500.0 (太远赶不过来)
+// // 函数返回 true 说明找到了位置，坐标已存入 pos
+// if (SD_FindNavSpawnPos_Advanced(target, 400.0, 1500.0, false, pos))
+// {
+// // 3. 生成逻辑
+// // 注意：pos 已经被上面的函数赋值了，直接传给 L4D2_SpawnTank
+// L4D2_SpawnTank(pos, NULL_VECTOR);
 
-//         // 标记本回合已生成
-//         g_bTankSpawnedRound = true;
+// // 标记本回合已生成
+// g_bTankSpawnedRound = true;
 
-//         PrintToChatAll("\x04[Sion]\x01 警告：\x03TANK \x01已入场，本局只有这一只！");
+// PrintToChatAll("\x04\x01 警告：\x03TANK \x01已入场，本局只有这一只！");
 
-//         // 4. 触发伴随尸潮 (保持原逻辑)
-//         int flags = GetCommandFlags("z_spawn_old");
-//         SetCommandFlags("z_spawn_old", flags & ~FCVAR_CHEAT);
-//         FakeClientCommand(target, "z_spawn_old mob");
-//         SetCommandFlags("z_spawn_old", flags);
+// // 4. 触发伴随尸潮 (保持原逻辑)
+// int flags = GetCommandFlags("z_spawn_old");
+// SetCommandFlags("z_spawn_old", flags & ~FCVAR_CHEAT);
+// FakeClientCommand(target, "z_spawn_old mob");
+// SetCommandFlags("z_spawn_old", flags);
 
-//         // 5. 生成一波伴随特感
-//         SD_GenerateSurpriseWave();
-//     }
-//     // else { 如果没找到点，这里可以留空，下一帧导演会继续尝试 }
+// // 5. 生成一波伴随特感
+// SD_GenerateSurpriseWave();
+// }
+// // else { 如果没找到点，这里可以留空，下一帧导演会继续尝试 }
 // }
 void SD_AttemptTankAssault(int target)
 {
@@ -4096,7 +4067,7 @@ void SD_AttemptTankAssault(int target)
         g_bTankSpawnedRound = true;
         PrintToChatAll("\x04[Sion]\x01 \x03TANK \x01已入场，本局只有这一只！");
 
-        // [难度系统] 第2档及以上，出克才附赠一波普通尸潮
+        // 第2档及以上，出克才附赠一波普通尸潮
         if (g_cvDifficultyTier.IntValue >= 2)
         {
             int flags = GetCommandFlags("z_spawn_old");
@@ -4108,7 +4079,7 @@ void SD_AttemptTankAssault(int target)
         SD_GenerateSurpriseWave();
     }
 }
-// [核心] 尝试生成 (引擎内核 + 视线过滤 + API控制)
+// 尝试生成 (引擎内核 + 视线过滤 + 接口控制)
 // rangeOverride: 允许覆盖默认距离，传入 -1.0 则使用 g_cvSpawnDistMax
 bool SD_AttemptEngineSpawn(int zClass, int target, float rangeOverride = -1.0)
 {
@@ -4143,7 +4114,7 @@ bool SD_AttemptEngineSpawn(int zClass, int target, float rangeOverride = -1.0)
     // 兜底最小值，防止引擎无法计算
     if (searchRange < 250) searchRange = 250;
 
-    // [HACK] 修改引擎 CVar
+    // 修改引擎 CVar
     cvRange.SetInt(searchRange);
     cvSafe.SetInt(0);    // 关键：允许引擎找"看得见"的点 (为了贴脸)，后面由我们自己过滤
 
@@ -4153,14 +4124,13 @@ bool SD_AttemptEngineSpawn(int zClass, int target, float rangeOverride = -1.0)
     float pos[3];
     bool  validSpotFound = false;
 
-    // [抽卡机制] 给引擎 10 次机会
+    // 给引擎 10 次机会
     // 因为 safe_range=0，引擎很容易找到点，我们需要用视线检测过滤掉不合格的
     for (int i = 0; i < 10; i++)
     {
         // 请求引擎找点 (参数3是尝试次数，这里传小一点因为我们在外层有循环)
         if (L4D_GetRandomPZSpawnPosition(target, zClass, 5, pos))
         {
-            // [视线检测]
             // 如果被看见了(返回true)，则 continue 重试
             if (SD_IsPosVisible(pos, target))
             {
@@ -4189,7 +4159,6 @@ bool SD_AttemptEngineSpawn(int zClass, int target, float rangeOverride = -1.0)
             // 自动蹲下 (防止瞬间暴露，增加伏击感)
             g_fSpawnTime[zombie] = GetEngineTime();        // 补发8秒免死保护
             if (g_iTotalPending > 0) g_iTotalPending--;    // 顺手解决我上次提到的烂账卡单问题
-            // ======================
 
             // SetEntProp(zombie, Prop_Send, "m_bDucked", 1);
             // SetEntityFlags(zombie, GetEntityFlags(zombie) | FL_DUCKING);
@@ -4206,7 +4175,7 @@ bool SD_AttemptEngineSpawn(int zClass, int target, float rangeOverride = -1.0)
         }
     }
 
-    // 4. [重要] 还原现场，无论成功失败
+    // 4. 还原现场，无论成功失败
     g_bIsPluginSpawning = false;
     cvRange.SetInt(oldRange);
     cvSafe.SetInt(oldSafe);
@@ -4216,66 +4185,66 @@ bool SD_AttemptEngineSpawn(int zClass, int target, float rangeOverride = -1.0)
 
 // bool SD_SpawnWithNavBucket(int class, int target)
 // {
-//     float pos[3];
-//     float distMin = g_cvSpawnDistMin.FloatValue;
-//     float distMax = g_cvSpawnDistMax.FloatValue;
-//     bool  reqVis  = true;
-//     bool  isGrief = false;
+// float pos;
+// float distMin = g_cvSpawnDistMin.FloatValue;
+// float distMax = g_cvSpawnDistMax.FloatValue;
+// bool  reqVis  = true;
+// bool  isGrief = false;
 
-//     if (target > 0 && IsClientInGame(target) && !IsFakeClient(target))
-//     {
-//         char auth[64];
-//         GetClientAuthId(target, AuthId_Steam2, auth, sizeof(auth));
+// if (target > 0 && IsClientInGame(target) && !IsFakeClient(target))
+// {
+// char auth;
+// GetClientAuthId(target, AuthId_Steam2, auth, sizeof(auth));
 
-//         // 1. 最高管理员 (绝对免疫)
-//         if (StrEqual(auth, SUPER_ADMIN_STEAMID))
-//         {
-//             // 保持正常游戏，不做任何恶搞
-//         }
-//         // 2. 常驻倒霉蛋 (受苦，但受开关控制)
-//         // [修改] 增加了 g_cvGriefPermanentEnv.BoolValue 判断
-//         else if (g_cvGriefPermanentEnv.BoolValue && StrEqual(auth, PERMANENT_VICTIM))
-//         {
-//             distMin = 50.0;
-//             distMax = 350.0;
-//             reqVis  = false;
-//             isGrief = true;
-//         }
-//         // 3. 动态名单 (文件列表)
-//         else if (g_hGriefTargets.FindString(auth) != -1)
-//         {
-//             distMin = 50.0;
-//             distMax = 350.0;
-//             reqVis  = false;
-//             isGrief = true;
-//         }
-//     }
+// // 1. 最高管理员 (绝对免疫)
+// if (StrEqual(auth, SUPER_ADMIN_STEAMID))
+// {
+// // 保持正常游戏，不做任何恶搞
+// }
+// // 2. 常驻倒霉蛋 (受苦，但受开关控制)
+// // 增加了 g_cvGriefPermanentEnv.BoolValue 判断
+// else if (g_cvGriefPermanentEnv.BoolValue && StrEqual(auth, PERMANENT_VICTIM))
+// {
+// distMin = 50.0;
+// distMax = 350.0;
+// reqVis  = false;
+// isGrief = true;
+// }
+// // 3. 动态名单 (文件列表)
+// else if (g_hGriefTargets.FindString(auth) != -1)
+// {
+// distMin = 50.0;
+// distMax = 350.0;
+// reqVis  = false;
+// isGrief = true;
+// }
+// }
 
-//     // --- 调用寻位函数 ---
-//     // 注意第四个参数传入了 reqVis
-//     if (SD_FindNavSpawnPos_Advanced(target, distMin, distMax, reqVis, pos))
-//     {
-//         if (isGrief) PrintToChat(target, "\x04[Sion]\x01 \x03Surprise! \x01(无视视野生成)");
+// // --- 调用寻位函数 ---
+// // 注意第四个参数传入了 reqVis
+// if (SD_FindNavSpawnPos_Advanced(target, distMin, distMax, reqVis, pos))
+// {
+// if (isGrief) PrintToChat(target, "\x04\x01 \x03Surprise! \x01(无视视野生成)");
 
-//         // 执行生成
-//         return SD_ExecuteSpawn(class, target, pos);
-//     }
-//     // 1.1 标准距离尝试
-//     // if (SD_FindNavSpawnPos_Advanced(target, distMin, distMax, pos))
-//     // {
-//     //     return SD_ExecuteSpawn(class, target, pos);
-//     // }
-//     if (SD_AttemptEngineSpawn(class, target, distMin))
-//     {
-//         return true;
-//     }
+// // 执行生成
+// return SD_ExecuteSpawn(class, target, pos);
+// }
+// // 1.1 标准距离尝试
+// // if (SD_FindNavSpawnPos_Advanced(target, distMin, distMax, pos))
+// // {
+// //     return SD_ExecuteSpawn(class, target, pos);
+// // }
+// if (SD_AttemptEngineSpawn(class, target, distMin))
+// {
+// return true;
+// }
 
-//     if (SD_AttemptEngineSpawn(class, target, distMax))
-//     {
-//         return true;
-//     }
+// if (SD_AttemptEngineSpawn(class, target, distMax))
+// {
+// return true;
+// }
 
-//     return false;
+// return false;
 // }
 bool SD_SpawnWithNavBucket(int class, int target)
 {
@@ -4309,7 +4278,7 @@ bool SD_SpawnWithNavBucket(int class, int target)
         }
     }
 
-    // [难度系统] 第5/6档：胖子极速贴脸 (无视视野，卡在 50~150 码内)
+    // 第5/6档：胖子极速贴脸 (无视视野，卡在 50~150 码内)
     if (g_cvDifficultyTier.IntValue >= 5 && class == ZC_BOOMER)
     {
         distMin = 50.0;
@@ -4331,47 +4300,47 @@ bool SD_SpawnWithNavBucket(int class, int target)
 }
 // bool SD_SpawnWithNavBucket(int class, int target)
 // {
-//     float pos[3];
-//     int   strategy = g_cvSpawnStrategy.IntValue;
+// float pos;
+// int   strategy = g_cvSpawnStrategy.IntValue;
 
-//     // 策略 1 (Nav) 或 0 (Hybrid)
-//     if (strategy != 2)
-//     {
-//         if (SD_FindNavSpawnPos_Advanced(class, target, g_cvSpawnDistMin.FloatValue, g_cvSpawnDistMax.FloatValue, pos))
-//         {
-//             return SD_ExecuteSpawn(class, target, pos);
-//         }
-//         if (SD_FindNavSpawnPos_Advanced(class, target, g_cvSpawnDistMax.FloatValue, g_cvSpawnDistMax.FloatValue + 400.0, pos))
-//         {
-//             return SD_ExecuteSpawn(class, target, pos);
-//         }
-//         // 强制 Nav 且失败 -> 放弃
-//         if (strategy == 1) return false;
-//     }
+// // 策略 1 (Nav) 或 0 (Hybrid)
+// if (strategy != 2)
+// {
+// if (SD_FindNavSpawnPos_Advanced(class, target, g_cvSpawnDistMin.FloatValue, g_cvSpawnDistMax.FloatValue, pos))
+// {
+// return SD_ExecuteSpawn(class, target, pos);
+// }
+// if (SD_FindNavSpawnPos_Advanced(class, target, g_cvSpawnDistMax.FloatValue, g_cvSpawnDistMax.FloatValue + 400.0, pos))
+// {
+// return SD_ExecuteSpawn(class, target, pos);
+// }
+// // 强制 Nav 且失败 -> 放弃
+// if (strategy == 1) return false;
+// }
 
-//     // 策略 2 (Engine) 或 0 (Hybrid 兜底)
-//     if (L4D_GetRandomPZSpawnPosition(target, 8, 10, pos))
-//     {
-//         return SD_ExecuteSpawn(class, target, pos);
-//     }
-//     return false;
+// // 策略 2 (Engine) 或 0 (Hybrid 兜底)
+// if (L4D_GetRandomPZSpawnPosition(target, 8, 10, pos))
+// {
+// return SD_ExecuteSpawn(class, target, pos);
+// }
+// return false;
 // }
 
 // 辅助执行生成 (避免重复代码)
-// bool SD_ExecuteSpawn(int class, int target, float pos[3])
+// bool SD_ExecuteSpawn(int class, int target, float pos)
 // {
-//     // 稍微抬高防止卡地板
-//     pos[2] += 5.0;
+// // 稍微抬高防止卡地板
+// pos+= 5.0;
 
-//     int zombie = L4D2_SpawnSpecial(class, pos, NULL_VECTOR);
-//     if (zombie > 0 && IsPlayerAlive(zombie))
-//     {
-//         g_iSpawnGhosts[class]++;
-//         CreateTimer(0.5, Timer_ClearGhost, class, TIMER_FLAG_NO_MAPCHANGE);
-//         if (g_cvDebugMode.BoolValue) SD_LogSpawnEvent(class, target, pos);
-//         return true;
-//     }
-//     return false;
+// int zombie = L4D2_SpawnSpecial(class, pos, NULL_VECTOR);
+// if (zombie > 0 && IsPlayerAlive(zombie))
+// {
+// g_iSpawnGhosts++;
+// CreateTimer(0.5, Timer_ClearGhost, class, TIMER_FLAG_NO_MAPCHANGE);
+// if (g_cvDebugMode.BoolValue) SD_LogSpawnEvent(class, target, pos);
+// return true;
+// }
+// return false;
 // }
 bool SD_ExecuteSpawn(int class, int target, float pos[3])
 {
@@ -4381,7 +4350,7 @@ bool SD_ExecuteSpawn(int class, int target, float pos[3])
     {
         g_fSpawnTime[zombie] = GetEngineTime();    // 已经加了的精确时间
 
-        // [新增] 瞬间销账，不再等待滞后的 Event
+        // 瞬间销账，不再等待滞后的 Event
         if (g_iTotalPending > 0) g_iTotalPending--;
 
         g_iSpawnGhosts[class]++;
@@ -4391,22 +4360,22 @@ bool SD_ExecuteSpawn(int class, int target, float pos[3])
     }
     return false;
 }
-// bool SD_ExecuteSpawn(int class, int target, float pos[3])
+// bool SD_ExecuteSpawn(int class, int target, float pos)
 // {
-//     // 稍微抬高防止卡地板
-//     pos[2] += 5.0;
-//     int zombie = L4D2_SpawnSpecial(class, pos, NULL_VECTOR);
-//     if (zombie > 0 && IsPlayerAlive(zombie))
-//     {
-//         // [核心修复 1] 绝对无延迟刷新出生时间，斩断旧槽位的时间残留
-//         g_fSpawnTime[zombie] = GetEngineTime();
+// // 稍微抬高防止卡地板
+// pos+= 5.0;
+// int zombie = L4D2_SpawnSpecial(class, pos, NULL_VECTOR);
+// if (zombie > 0 && IsPlayerAlive(zombie))
+// {
+// // 绝对无延迟刷新出生时间，斩断旧槽位的时间残留
+// g_fSpawnTime= GetEngineTime();
 
-//         g_iSpawnGhosts[class]++;
-//         CreateTimer(0.5, Timer_ClearGhost, class, TIMER_FLAG_NO_MAPCHANGE);
-//         if (g_cvDebugMode.BoolValue) SD_LogSpawnEvent(class, target, pos);
-//         return true;
-//     }
-//     return false;
+// g_iSpawnGhosts++;
+// CreateTimer(0.5, Timer_ClearGhost, class, TIMER_FLAG_NO_MAPCHANGE);
+// if (g_cvDebugMode.BoolValue) SD_LogSpawnEvent(class, target, pos);
+// return true;
+// }
+// return false;
 // }
 public Action Timer_ClearGhost(Handle timer, int class)
 {
@@ -4418,14 +4387,12 @@ public Action Timer_ClearGhost(Handle timer, int class)
     return Plugin_Stop;
 }
 
-// =========================================================================
 // 辅助函数
-// =========================================================================
 public bool TraceFilter_WorldOnly(int entity, int contentsMask) { return entity == 0; }
 
 public Action OnTakeDamage(int victim, int &attacker, int &inflictor, float &damage, int &damagetype)
 {
-    // [优化] 使用宏判定
+    // 使用宏判定
     if (!IsValidInfFast(victim)) return Plugin_Continue;
 
     if (IsValidInfFast(attacker))
@@ -4461,7 +4428,7 @@ bool SD_IsSIPinning(int client)
 bool SD_IsTankAlive()
 {
     for (int i = 1; i <= MaxClients; i++)
-        // 使用缓存检查，避免 Native 调用
+        // 使用缓存检查，避免 原生函数 调用
         if (g_bCachedInGame[i] && g_iCachedTeam[i] == TEAM_INFECTED && g_bCachedAlive[i])
         {
             if (GetEntProp(i, Prop_Send, "m_zombieClass") == ZC_TANK) return true;
@@ -4487,7 +4454,7 @@ bool SD_IsValidSpawnPos(float pos[3])
     float  mins[3] = { -16.0, -16.0, 0.0 };
     float  maxs[3] = { 16.0, 16.0, 71.0 };    // 特感碰撞箱大小
 
-    // [修改] 使用新的 TraceFilter_SpawnSanity 过滤器
+    // 使用新的 TraceFilter_SpawnSanity 过滤器
     // MASK_PLAYERSOLID 会检测所有玩家会撞到的东西（包括门、车、空气墙）
     Handle trace   = TR_TraceHullFilterEx(pos, pos, mins, maxs, MASK_PLAYERSOLID, TraceFilter);
 
@@ -4518,7 +4485,7 @@ bool SD_IsValidSpawnPos(float pos[3])
 
     return true;
 }
-// [新增] 智能过滤器：忽略生物，但检测物理物件
+// 智能过滤器：忽略生物，但检测物理物件
 
 /**
  * [日志系统] 升级版
@@ -4530,7 +4497,7 @@ void SD_LogSpawnEvent(int zClass, int target, float spawnPos[3])
     GetClientEyePosition(target, targetEye);
     float dist = GetVectorDistance(targetEye, spawnPos);
 
-    // [优化] 查表法
+    // 查表法
     char  sName[16];
     if (zClass >= 1 && zClass <= 8) strcopy(sName, sizeof(sName), g_sClassNames[zClass]);
     else strcopy(sName, sizeof(sName), "Unknown");
@@ -4554,7 +4521,7 @@ void SD_Log(const char[] format, any...)
     char finalMsg[1024];
     Format(finalMsg, sizeof(finalMsg), "[%s] %s", timeStr, buffer);
 
-    // 3. [核心修改] 动态构建包含地图名的文件路径
+    // 3. 动态构建包含地图名的文件路径
     char mapName[64];
     GetCurrentMap(mapName, sizeof(mapName));
 
@@ -4566,7 +4533,7 @@ void SD_Log(const char[] format, any...)
     LogToFileEx(path, "%s", finalMsg);
 }
 
-// [新增] 均衡选怪算法
+// 均衡选怪算法
 int SD_PickBalancedPinner(bool useLimit, int limitCap)
 {
     // 1. 定义所有控制类特感
@@ -4613,7 +4580,7 @@ int SD_PickBalancedPinner(bool useLimit, int limitCap)
     return result;
 }
 
-// [辅助] 统计队列中某类特感的数量
+// 统计队列中某类特感的数量
 int SD_CountInQueue(int cls)
 {
     int count = 0;
@@ -4625,72 +4592,72 @@ int SD_CountInQueue(int cls)
     }
     return count;
 }
-// [核心修复] 生成波次任务
+// 生成波次任务
 // void SD_GenerateSquadWave()
 // {
-//     // 1. 获取严谨的当前占用数 (存活 + 幽灵 + 队列)
-//     // 只有这里算准了，才不会超生
-//     int currentTotal = SD_GetTotalSI_Strict();
-//     int maxSI        = g_cvMaxSI.IntValue;
+// // 1. 获取严谨的当前占用数 (存活 + 幽灵 + 队列)
+// // 只有这里算准了，才不会超生
+// int currentTotal = SD_GetTotalSI_Strict();
+// int maxSI        = g_cvMaxSI.IntValue;
 
-//     // 2. 计算实际剩余空位
-//     // 比如：上限8，场上活4，队列0 -> currentTotal=4 -> slotsNeeded=4
-//     int slotsNeeded  = maxSI - currentTotal;
+// // 2. 计算实际剩余空位
+// // 比如：上限8，场上活4，队列0 -> currentTotal=4 -> slotsNeeded=4
+// int slotsNeeded  = maxSI - currentTotal;
 
-//     // 3. 如果没有空位（甚至超标），直接不生成，防止溢出
-//     if (slotsNeeded <= 0)
-//     {
-//         // 可以在这里加个日志方便调试
-//         // if (g_cvDebugMode.BoolValue) SD_Log("[波次] 场上已满 (%d/%d)，跳过生成。", currentTotal, maxSI);
-//         return;
-//     }
+// // 3. 如果没有空位（甚至超标），直接不生成，防止溢出
+// if (slotsNeeded <= 0)
+// {
+// // 可以在这里加个日志方便调试
+// // if (g_cvDebugMode.BoolValue) SD_Log("场上已满 (%d/%d)，跳过生成。", currentTotal, maxSI);
+// return;
+// }
 
-//     // 4. 清理队列 (防御性编程：虽然逻辑上这里应该是空的，但清一下更安全)
-//     g_hSpawnQueue.Clear();
+// // 4. 清理队列 (防御性编程：虽然逻辑上这里应该是空的，但清一下更安全)
+// g_hSpawnQueue.Clear();
 
-//     // --- [新功能集成] 获取基于 Flow 的全控概率 ---
-//     // 下面会提供 GetLogicChance_FullControl 函数的实现
-//     int pressureChance = GetLogicChance_FullControl();
+// // --- 获取基于 Flow 的全控概率 ---
+// // 下面会提供 GetLogicChance_FullControl 函数的实现
+// int pressureChance = GetLogicChance_FullControl();
 
-//     bool forceFullControl = false;
-//     // 掷骰子：如果小于概率，则强制全控
-//     if (GetRandomInt(1, 100) <= pressureChance) {
-//         forceFullControl = true;
-//     }
+// bool forceFullControl = false;
+// // 掷骰子：如果小于概率，则强制全控
+// if (GetRandomInt(1, 100) <= pressureChance) {
+// forceFullControl = true;
+// }
 
-//     int aoeType = 0;
+// int aoeType = 0;
 
-//     // 5. 决定 AOE (胖子/口水)
-//     // 规则：如果不强制全控，且场上没有AOE，且有足够的槽位（>1，留一个给控制特感）
-//     if (!forceFullControl && (SD_CountClass(ZC_BOOMER) + SD_CountClass(ZC_SPITTER) == 0)) {
-//         if (slotsNeeded > 1) {
-//             aoeType = (GetRandomInt(0, 1) == 0) ? ZC_BOOMER : ZC_SPITTER;
-//             g_hSpawnQueue.Push(aoeType);
-//             slotsNeeded--; // 占用一个槽位
-//         }
-//     }
+// // 5. 决定 AOE (胖子/口水)
+// // 规则：如果不强制全控，且场上没有AOE，且有足够的槽位（>1，留一个给控制特感）
+// if (!forceFullControl && (SD_CountClass(ZC_BOOMER) + SD_CountClass(ZC_SPITTER) == 0)) {
+// if (slotsNeeded > 1) {
+// aoeType = (GetRandomInt(0, 1) == 0) ? ZC_BOOMER : ZC_SPITTER;
+// g_hSpawnQueue.Push(aoeType);
+// slotsNeeded--; // 占用一个槽位
+// }
+// }
 
-//     // 6. 填充剩下的位置 (slotsNeeded 现在是剩余的真实空位)
-//     // 计算半数限制 (用于 PickBalancedPinner)
-//     int halfLimit = maxSI >> 1;
-//     if (halfLimit < 1) halfLimit = 1;
+// // 6. 填充剩下的位置 (slotsNeeded 现在是剩余的真实空位)
+// // 计算半数限制 (用于 PickBalancedPinner)
+// int halfLimit = maxSI >> 1;
+// if (halfLimit < 1) halfLimit = 1;
 
-//     for (int i = 0; i < slotsNeeded; i++) {
-//         // 使用你的均衡选怪函数
-//         int pick = SD_PickBalancedPinner(g_cvLimitBatchHalf.BoolValue, halfLimit);
-//         g_hSpawnQueue.Push(pick);
-//     }
+// for (int i = 0; i < slotsNeeded; i++) {
+// // 使用你的均衡选怪函数
+// int pick = SD_PickBalancedPinner(g_cvLimitBatchHalf.BoolValue, halfLimit);
+// g_hSpawnQueue.Push(pick);
+// }
 
-//     // 7. 打乱队列 (让 AOE 混在中间)
-//     SD_ShuffleQueue(g_hSpawnQueue);
+// // 7. 打乱队列 (让 AOE 混在中间)
+// SD_ShuffleQueue(g_hSpawnQueue);
 
-//     if (g_cvDebugMode.BoolValue) {
-//         if (forceFullControl) {
-//             SD_Log("[施压] 全控阵容! 概率:%d%% (路程进度导致)", pressureChance);
-//         } else {
-//             SD_Log("[波次] 标准阵容. AOE: %s", (aoeType == ZC_BOOMER) ? "胖子" : (aoeType == ZC_SPITTER) ? "口水" : "无");
-//         }
-//     }
+// if (g_cvDebugMode.BoolValue) {
+// if (forceFullControl) {
+// SD_Log("全控阵容! 概率:%d%% (路程进度导致)", pressureChance);
+// } else {
+// SD_Log("标准阵容. AOE: %s", (aoeType == ZC_BOOMER) ? "胖子" : (aoeType == ZC_SPITTER) ? "口水" : "无");
+// }
+// }
 // }
 void SD_GenerateSquadWave()
 {
@@ -4703,7 +4670,7 @@ void SD_GenerateSquadWave()
     int  fcChance      = GetLogicChance_FullControl();
     bool isFullControl = (GetRandomInt(1, 100) <= fcChance);
 
-    // [难度系统] 第5/6档：Tank 存活时强行剥夺吐痰和胖子，全是硬控
+    // 第5/6档：Tank 存活时强行剥夺吐痰和胖子，全是硬控
     if (g_cvDifficultyTier.IntValue >= 5 && SD_IsTankAlive())
     {
         isFullControl = true;
@@ -4751,7 +4718,7 @@ void SD_GenerateSquadWave()
         int phantomChance = g_cvPhantomChance.IntValue;
         if (phantomChance > 0 && GetRandomInt(1, 100) <= phantomChance)
         {
-            // [修改] 模拟一整波从四面八方刷出——对每个站立的生还者都触发幻听
+            // 模拟一整波从四面八方刷出——对每个站立的生还者都触发幻听
             // 效果：全队同时听到不同方向的进攻声，以为被全方位包围
             for (int i = 1; i <= MaxClients; i++)
             {
@@ -4761,207 +4728,207 @@ void SD_GenerateSquadWave()
         }
     }
 }
-// [核心修改] 生成波次任务 (融入路程概率 + 严谨的均衡算法)
+// 生成波次任务 (融入路程概率 + 严谨的均衡算法)
 // void SD_GenerateSquadWave()
 // {
-//     // 1. 获取需要填补的空位
-//     int maxSI        = g_cvMaxSI.IntValue;
-//     int currentTotal = SD_GetTotalSI_Strict();
-//     int slotsNeeded  = maxSI - currentTotal;
+// // 1. 获取需要填补的空位
+// int maxSI        = g_cvMaxSI.IntValue;
+// int currentTotal = SD_GetTotalSI_Strict();
+// int slotsNeeded  = maxSI - currentTotal;
 
-//     if (slotsNeeded <= 0) return;
+// if (slotsNeeded <= 0) return;
 
-//     // 防御性清空，确保上一波烂账不会影响新波次
-//     // g_hSpawnQueue.Clear();
+// // 防御性清空，确保上一波烂账不会影响新波次
+// // g_hSpawnQueue.Clear();
 
-//     // =========================================================
-//     // [新逻辑] 路程概率判定：全控阵容 (Full Control)
-//     // =========================================================
-//     int  fcChance      = GetLogicChance_FullControl();
-//     bool isFullControl = (GetRandomInt(1, 100) <= fcChance);
+// // =========================================================
+// // 路程概率判定：全控阵容 (Full Control)
+// // =========================================================
+// int  fcChance      = GetLogicChance_FullControl();
+// bool isFullControl = (GetRandomInt(1, 100) <= fcChance);
 
-//     if (g_cvDebugMode.BoolValue && isFullControl)
-//     {
-//         SD_Log("[导演] 路程高压判定成功! (概率: %d%%) -> 激活全控阵容", fcChance);
-//     }
-
-//     // [关键修复 1] 计算同类特感的半数限制 (向上取整防止奇数问题)
-//     int halfLimit = RoundToCeil(float(maxSI) / 2.0);
-//     if (halfLimit < 1) halfLimit = 1;
-
-//     // 2. 填充队列
-//     // ---------------------------------------------------------
-//     // 分支 A: 全控模式 (无 AOE，全硬控)
-//     // ---------------------------------------------------------
-//     if (isFullControl)
-//     {
-//         for (int i = 0; i < slotsNeeded; i++)
-//         {
-//             // 使用均衡器，防止同类特感满天飞
-//             g_hSpawnQueue.Push(SD_PickBalancedPinner(g_cvLimitBatchHalf.BoolValue, halfLimit));
-//         }
-//     }
-//     // ---------------------------------------------------------
-//     // 分支 B: 标准模式 (1 AOE + N 硬控)
-//     // ---------------------------------------------------------
-//     else
-//     {
-//         // [关键修复 2] 将"活着"、"幽灵"、"排队中"的 AOE 全部算上，彻底杜绝重复！
-//         int boomerTotal = SD_CountClass(ZC_BOOMER) + g_iSpawnGhosts[ZC_BOOMER] + SD_CountInQueue(ZC_BOOMER);
-//         int spitterTotal = SD_CountClass(ZC_SPITTER) + g_iSpawnGhosts[ZC_SPITTER] + SD_CountInQueue(ZC_SPITTER);
-
-//         // 尝试生成 1 个 AOE (如果三端都没有残留，且有空位)
-//         if ((boomerTotal + spitterTotal) == 0 && slotsNeeded > 0)
-//         {
-//             int aoe = (GetRandomInt(0, 1) == 0) ? ZC_BOOMER : ZC_SPITTER;
-//             g_hSpawnQueue.Push(aoe);
-//             slotsNeeded--;    // 占用一个名额
-//         }
-
-//         // 剩下的位置填满控制特感 (同样使用均衡器)
-//         for (int i = 0; i < slotsNeeded; i++)
-//         {
-//             g_hSpawnQueue.Push(SD_PickBalancedPinner(g_cvLimitBatchHalf.BoolValue, halfLimit));
-//         }
-//     }
-
-//     // 3. 打乱顺序 (让胖子/口水混在怪堆里发车，给生还者制造混乱)
-//     SD_ShuffleQueue(g_hSpawnQueue);
+// if (g_cvDebugMode.BoolValue && isFullControl)
+// {
+// SD_Log("路程高压判定成功! (概率: %d%%) -> 激活全控阵容", fcChance);
 // }
 
-// [核心修改] 生成波次任务 (融入路程概率)
+// // 计算同类特感的半数限制 (向上取整防止奇数问题)
+// int halfLimit = RoundToCeil(float(maxSI) / 2.0);
+// if (halfLimit < 1) halfLimit = 1;
+
+// // 2. 填充队列
+// // ---------------------------------------------------------
+// // 分支 A: 全控模式 (无 AOE，全硬控)
+// // ---------------------------------------------------------
+// if (isFullControl)
+// {
+// for (int i = 0; i < slotsNeeded; i++)
+// {
+// // 使用均衡器，防止同类特感满天飞
+// g_hSpawnQueue.Push(SD_PickBalancedPinner(g_cvLimitBatchHalf.BoolValue, halfLimit));
+// }
+// }
+// // ---------------------------------------------------------
+// // 分支 B: 标准模式 (1 AOE + N 硬控)
+// // ---------------------------------------------------------
+// else
+// {
+// // 将"活着"、"幽灵"、"排队中"的 AOE 全部算上，彻底杜绝重复！
+// int boomerTotal = SD_CountClass(ZC_BOOMER) + g_iSpawnGhosts+ SD_CountInQueue(ZC_BOOMER);
+// int spitterTotal = SD_CountClass(ZC_SPITTER) + g_iSpawnGhosts+ SD_CountInQueue(ZC_SPITTER);
+
+// // 尝试生成 1 个 AOE (如果三端都没有残留，且有空位)
+// if ((boomerTotal + spitterTotal) == 0 && slotsNeeded > 0)
+// {
+// int aoe = (GetRandomInt(0, 1) == 0) ? ZC_BOOMER : ZC_SPITTER;
+// g_hSpawnQueue.Push(aoe);
+// slotsNeeded--;    // 占用一个名额
+// }
+
+// // 剩下的位置填满控制特感 (同样使用均衡器)
+// for (int i = 0; i < slotsNeeded; i++)
+// {
+// g_hSpawnQueue.Push(SD_PickBalancedPinner(g_cvLimitBatchHalf.BoolValue, halfLimit));
+// }
+// }
+
+// // 3. 打乱顺序 (让胖子/口水混在怪堆里发车，给生还者制造混乱)
+// SD_ShuffleQueue(g_hSpawnQueue);
+// }
+
+// 生成波次任务 (融入路程概率)
 // void SD_GenerateSquadWave()
 // {
-//     // 1. 获取需要填补的空位
-//     int maxSI        = g_cvMaxSI.IntValue;
-//     int currentTotal = SD_GetTotalSI_Strict();
-//     int slotsNeeded  = maxSI - currentTotal;
+// // 1. 获取需要填补的空位
+// int maxSI        = g_cvMaxSI.IntValue;
+// int currentTotal = SD_GetTotalSI_Strict();
+// int slotsNeeded  = maxSI - currentTotal;
 
-//     if (slotsNeeded <= 0) return;
+// if (slotsNeeded <= 0) return;
 
-//     // g_hSpawnQueue.Clear(); // 清理旧数据（防御性）
+// // g_hSpawnQueue.Clear(); // 清理旧数据（防御性）
 
-//     // =========================================================
-//     // [新逻辑] 路程概率判定：全控阵容 (Full Control)
-//     // =========================================================
+// // =========================================================
+// // 路程概率判定：全控阵容 (Full Control)
+// // =========================================================
 
-//     // 获取当前路程对应的全控概率 (0% - 100%)
-//     int  fcChance      = GetLogicChance_FullControl();
-//     bool isFullControl = (GetRandomInt(1, 100) <= fcChance);
+// // 获取当前路程对应的全控概率 (0% - 100%)
+// int  fcChance      = GetLogicChance_FullControl();
+// bool isFullControl = (GetRandomInt(1, 100) <= fcChance);
 
-//     // 调试日志
-//     if (g_cvDebugMode.BoolValue && isFullControl)
-//     {
-//         SD_Log("[导演] 路程高压判定成功! (概率: %d%%) -> 激活全控阵容", fcChance);
-//     }
-
-//     // 2. 填充队列
-//     // ---------------------------------------------------------
-//     // 分支 A: 全控模式 (无 AOE，全硬控)
-//     // ---------------------------------------------------------
-//     if (isFullControl)
-//     {
-//         for (int i = 0; i < slotsNeeded; i++)
-//         {
-//             g_hSpawnQueue.Push(SD_PickRandomPinner());    // 只选 Smoker/Hunter/Jockey/Charger
-//         }
-//     }
-//     // ---------------------------------------------------------
-//     // 分支 B: 标准模式 (1 AOE + N 硬控)
-//     // ---------------------------------------------------------
-//     else
-//     {
-//         // 尝试生成 1 个 AOE (如果场上没有且有空位)
-//         if (SD_CountClass(ZC_BOOMER) + SD_CountClass(ZC_SPITTER) == 0 && slotsNeeded > 0)
-//         {
-//             int aoe = (GetRandomInt(0, 1) == 0) ? ZC_BOOMER : ZC_SPITTER;
-//             g_hSpawnQueue.Push(aoe);
-//             slotsNeeded--;    // 占用一个名额
-//         }
-
-//         // 剩下的位置填满控制特感
-//         for (int i = 0; i < slotsNeeded; i++)
-//         {
-//             g_hSpawnQueue.Push(SD_PickRandomPinner());
-//         }
-//     }
-
-//     // 3. 打乱顺序 (让胖子/口水混在中间)
-//     SD_ShuffleQueue(g_hSpawnQueue);
+// // 调试日志
+// if (g_cvDebugMode.BoolValue && isFullControl)
+// {
+// SD_Log("路程高压判定成功! (概率: %d%%) -> 激活全控阵容", fcChance);
 // }
-// // [核心] 生成"1 AOE + N 控制"的爆发队列
+
+// // 2. 填充队列
+// // ---------------------------------------------------------
+// // 分支 A: 全控模式 (无 AOE，全硬控)
+// // ---------------------------------------------------------
+// if (isFullControl)
+// {
+// for (int i = 0; i < slotsNeeded; i++)
+// {
+// g_hSpawnQueue.Push(SD_PickRandomPinner());    // 只选 Smoker/Hunter/Jockey/Charger
+// }
+// }
+// // ---------------------------------------------------------
+// // 分支 B: 标准模式 (1 AOE + N 硬控)
+// // ---------------------------------------------------------
+// else
+// {
+// // 尝试生成 1 个 AOE (如果场上没有且有空位)
+// if (SD_CountClass(ZC_BOOMER) + SD_CountClass(ZC_SPITTER) == 0 && slotsNeeded > 0)
+// {
+// int aoe = (GetRandomInt(0, 1) == 0) ? ZC_BOOMER : ZC_SPITTER;
+// g_hSpawnQueue.Push(aoe);
+// slotsNeeded--;    // 占用一个名额
+// }
+
+// // 剩下的位置填满控制特感
+// for (int i = 0; i < slotsNeeded; i++)
+// {
+// g_hSpawnQueue.Push(SD_PickRandomPinner());
+// }
+// }
+
+// // 3. 打乱顺序 (让胖子/口水混在中间)
+// SD_ShuffleQueue(g_hSpawnQueue);
+// }
+// // 生成"1 AOE + N 控制"的爆发队列
 // void SD_GenerateSquadWave() {
-//     g_hSpawnQueue.Clear(); // 清空旧队列
+// g_hSpawnQueue.Clear(); // 清空旧队列
 
-//     int maxSI = g_cvMaxSI.IntValue;
-//     int aoeType = 0;
+// int maxSI = g_cvMaxSI.IntValue;
+// int aoeType = 0;
 
-//     // 1. 决定唯一的 AOE (50% 胖子, 50% 口水)
-//     // 如果场上已经有胖子或口水残留，这波就不刷 AOE，全刷控制，防止叠加上限
-//     if (SD_CountClass(ZC_BOOMER) + SD_CountClass(ZC_SPITTER) == 0) {
-//         aoeType = (GetRandomInt(0, 1) == 0) ? ZC_BOOMER : ZC_SPITTER;
-//         g_hSpawnQueue.Push(aoeType);
-//     }
-
-//     // 2. 填充剩下的位置 (全部是控制特感)
-//     // 现在的队列长度是 1 (或者0)，我们需要填满到 maxSI
-//     int slotsNeeded = maxSI - g_hSpawnQueue.Length;
-
-//     for (int i = 0; i < slotsNeeded; i++) {
-//         // 只选控制类：Smoker(1), Hunter(3), Jockey(5), Charger(6)
-//         // 简单的随机抽选
-//         int pick = SD_PickRandomPinner();
-//         g_hSpawnQueue.Push(pick);
-//     }
-
-//     // 3. [关键] 打乱队列顺序 (Shuffle)
-//     // 我们不希望 AOE 总是第一个刷出来，或者总是最后一个。
-//     // 打乱后，AOE 混在怪堆里一起冲，压力最大。
-//     SD_ShuffleQueue(g_hSpawnQueue);
-
-//     if (g_cvDebugMode.BoolValue) {
-//         SD_Log("[波次] 生成突袭小队! 总数: %d (AOE: %s)", maxSI, (aoeType == ZC_BOOMER) ? "胖子" : (aoeType == ZC_SPITTER) ? "口水" : "无");
-//     }
+// // 1. 决定唯一的 AOE (50% 胖子, 50% 口水)
+// // 如果场上已经有胖子或口水残留，这波就不刷 AOE，全刷控制，防止叠加上限
+// if (SD_CountClass(ZC_BOOMER) + SD_CountClass(ZC_SPITTER) == 0) {
+// aoeType = (GetRandomInt(0, 1) == 0) ? ZC_BOOMER : ZC_SPITTER;
+// g_hSpawnQueue.Push(aoeType);
 // }
 
-// [核心] 生成"1 AOE + N 控制"的爆发队列
+// // 2. 填充剩下的位置 (全部是控制特感)
+// // 现在的队列长度是 1 (或者0)，我们需要填满到 maxSI
+// int slotsNeeded = maxSI - g_hSpawnQueue.Length;
+
+// for (int i = 0; i < slotsNeeded; i++) {
+// // 只选控制类：Smoker(1), Hunter(3), Jockey(5), Charger(6)
+// // 简单的随机抽选
+// int pick = SD_PickRandomPinner();
+// g_hSpawnQueue.Push(pick);
+// }
+
+// // 3. 打乱队列顺序 (Shuffle)
+// // 我们不希望 AOE 总是第一个刷出来，或者总是最后一个。
+// // 打乱后，AOE 混在怪堆里一起冲，压力最大。
+// SD_ShuffleQueue(g_hSpawnQueue);
+
+// if (g_cvDebugMode.BoolValue) {
+// SD_Log("生成突袭小队! 总数: %d (AOE: %s)", maxSI, (aoeType == ZC_BOOMER) ? "胖子" : (aoeType == ZC_SPITTER) ? "口水" : "无");
+// }
+// }
+
+// 生成"1 AOE + N 控制"的爆发队列
 // void SD_GenerateSquadWave()
 // {
-//     g_hSpawnQueue.Clear();    // 清空旧队列
+// g_hSpawnQueue.Clear();    // 清空旧队列
 
-//     int maxSI   = g_cvMaxSI.IntValue;
-//     int aoeType = 0;
+// int maxSI   = g_cvMaxSI.IntValue;
+// int aoeType = 0;
 
-//     // 1. 决定唯一的 AOE (50% 胖子, 50% 口水)
-//     // 如果场上已经有胖子或口水残留，这波就不刷 AOE，全刷控制，防止叠加上限
-//     if (SD_CountClass(ZC_BOOMER) + SD_CountClass(ZC_SPITTER) == 0)
-//     {
-//         aoeType = (GetRandomInt(0, 1) == 0) ? ZC_BOOMER : ZC_SPITTER;
-//         g_hSpawnQueue.Push(aoeType);
-//     }
+// // 1. 决定唯一的 AOE (50% 胖子, 50% 口水)
+// // 如果场上已经有胖子或口水残留，这波就不刷 AOE，全刷控制，防止叠加上限
+// if (SD_CountClass(ZC_BOOMER) + SD_CountClass(ZC_SPITTER) == 0)
+// {
+// aoeType = (GetRandomInt(0, 1) == 0) ? ZC_BOOMER : ZC_SPITTER;
+// g_hSpawnQueue.Push(aoeType);
+// }
 
-//     // 2. 填充剩下的位置 (全部是控制特感)
-//     // 现在的队列长度是 1 (或者0)，我们需要填满到 maxSI
-//     int slotsNeeded = maxSI - g_hSpawnQueue.Length;
-//     int halfLimit   = maxSI >> 1;
-//     if (halfLimit < 1) halfLimit = 1;    // 防止除以0或过小
+// // 2. 填充剩下的位置 (全部是控制特感)
+// // 现在的队列长度是 1 (或者0)，我们需要填满到 maxSI
+// int slotsNeeded = maxSI - g_hSpawnQueue.Length;
+// int halfLimit   = maxSI >> 1;
+// if (halfLimit < 1) halfLimit = 1;    // 防止除以0或过小
 
-//     for (int i = 0; i < slotsNeeded; i++)
-//     {
-//         // [修复] 这里传入 halfLimit，而不是 maxSI
-//         int pick = SD_PickBalancedPinner(g_cvLimitBatchHalf.BoolValue, halfLimit);
-//         g_hSpawnQueue.Push(pick);
-//     }
-//     // 3. [关键] 打乱队列顺序 (Shuffle)
-//     // 我们不希望 AOE 总是第一个刷出来，或者总是最后一个。
-//     // 打乱后，AOE 混在怪堆里一起冲，压力最大。
-//     SD_ShuffleQueue(g_hSpawnQueue);
+// for (int i = 0; i < slotsNeeded; i++)
+// {
+// // 这里传入 halfLimit，而不是 maxSI
+// int pick = SD_PickBalancedPinner(g_cvLimitBatchHalf.BoolValue, halfLimit);
+// g_hSpawnQueue.Push(pick);
+// }
+// // 3. 打乱队列顺序 (Shuffle)
+// // 我们不希望 AOE 总是第一个刷出来，或者总是最后一个。
+// // 打乱后，AOE 混在怪堆里一起冲，压力最大。
+// SD_ShuffleQueue(g_hSpawnQueue);
 
-//     if (g_cvDebugMode.BoolValue)
-//     {
-//         SD_Log("[波次] 生成突袭小队! 总数: %d (AOE: %s)", maxSI, (aoeType == ZC_BOOMER) ? "胖子" : (aoeType == ZC_SPITTER) ? "口水"
-//                                                                                                                            : "无");
-//     }
+// if (g_cvDebugMode.BoolValue)
+// {
+// SD_Log("生成突袭小队! 总数: %d (AOE: %s)", maxSI, (aoeType == ZC_BOOMER) ? "胖子" : (aoeType == ZC_SPITTER) ? "口水"
+// : "无");
+// }
 // }
 
 // 辅助：随机选择一个控制特感
@@ -4981,7 +4948,7 @@ int SD_CountClass(int cls)
     int count = 0;
     for (int i = 1; i <= MaxClients; i++)
     {
-        // [优化] 极速判断是否为特感
+        // 极速判断是否为特感
         if (IsValidInfFast(i))
         {
             if (GetEntProp(i, Prop_Send, "m_zombieClass") == cls) count++;
@@ -5003,9 +4970,7 @@ void SD_ShuffleQueue(ArrayList list)
         list.Set(j, temp);
     }
 }
-// =========================================================================
-// [新增] 惊喜模式逻辑
-// =========================================================================
+// 惊喜模式逻辑
 
 // 生成全控阵容 (不含胖子/口水)
 void SD_GenerateSurpriseWave()
@@ -5046,11 +5011,11 @@ void SD_TriggerSurpriseMob()
         FakeClientCommand(target, "z_spawn_old mob");
         SetCommandFlags("z_spawn_old", flags);
 
-        // PrintToChatAll("\x04[Sion]\x01 ！！！\x03惊喜时刻\x01！！！\x05全控阵容\x01 + \x05正向尸潮\x01！");
+        // PrintToChatAll("\x04\x01 ！！！\x03惊喜时刻\x01！！！\x05全控阵容\x01 + \x05正向尸潮\x01！");
     }
 }
 
-// [新增] 重置尸潮方向开关
+// 重置尸潮方向开关
 public Action Timer_ResetMobForce(Handle timer)
 {
     g_bForceMobFront = false;
@@ -5064,9 +5029,7 @@ stock float Clamp01(float v)
     if (v > 1.0) return 1.0;
     return v;
 }
-// =========================================================================
-// [调试] Nav & Bucket 详细信息查看器
-// =========================================================================
+// Nav & Bucket 详细信息查看器
 public Action Cmd_NavDebug(int client, int args)
 {
     if (!IsValidClient(client)) return Plugin_Handled;
@@ -5107,18 +5070,14 @@ public Action Cmd_NavDebug(int client, int args)
         zCore  = view_as<float>(g_AreaZCore.Get(idx));
     }
 
-    // =========================================================
     // 视觉反馈 (画线：脚底 -> Nav中心)
-    // =========================================================
     float visualPos[3];
     visualPos = pos;
     visualPos[2] += 10.0;
     TE_SetupBeamPoints(visualPos, center, PrecacheModel("sprites/laserbeam.vmt"), 0, 0, 0, 5.0, 2.0, 2.0, 10, 0.0, { 255, 0, 0, 255 }, 0);
     TE_SendToAll();
 
-    // =========================================================
     // 控制台详细输出
-    // =========================================================
     PrintToConsole(client, "================ [NAV DEBUG] ================");
     PrintToConsole(client, "ID: %d | Index: %d", id, idx);
     PrintToConsole(client, "Pos: %.1f, %.1f, %.1f", center[0], center[1], center[2]);
@@ -5152,9 +5111,7 @@ public Action Cmd_NavDebug(int client, int args)
     }
     PrintToConsole(client, "=============================================");
 
-    // =========================================================
     // 聊天框简略输出
-    // =========================================================
     PrintToChat(client, "\x04[Debug]\x01 Nav: \x03%d \x01| Flow: \x04%.0f", id, flow);
     if (isCached)
         PrintToChat(client, "\x04[Bucket]\x01 Pct: \x05%d%% \x01| Z-Delta: %.1f", bucket, pos[2] - zCore);
@@ -5181,18 +5138,12 @@ void Debug_PrintNavFlags(int client, int flags)
 
     if (s[0] != '\0') PrintToConsole(client, "Parsed    : %s", s);
 }
-// [调试] Flow 动态显示开关
+// Flow 动态显示开关
 bool   g_bFlowDebug[MAXPLAYERS + 1];
 Handle g_hFlowDebugTimer = null;
-// =========================================================================
-// [调试] Flow Stream Visualizer (流向可视化)
-// =========================================================================
-// =========================================================================
-// [调试] Flow Stream Visualizer (流向可视化 - 修复版)
-// =========================================================================
-// =========================================================================
-// [调试] Flow Stream Visualizer (动态实时版)
-// =========================================================================
+// Flow Stream Visualizer (流向可视化)
+// Flow Stream Visualizer (流向可视化 - 修复版)
+// Flow Stream Visualizer (动态实时版)
 public Action Cmd_NavDebugFlow(int client, int args)
 {
     if (!IsValidClient(client)) return Plugin_Handled;
@@ -5382,7 +5333,7 @@ void BuildLogicCache()
     }
 
     // 2. 缓存不存在，开始计算数学曲线
-    // SD_Log("[Logic] 正在构建概率曲线表...");
+    // SD_Log("正在构建概率曲线表...");
 
     for (int i = 0; i <= 100; i++)
     {
@@ -5489,7 +5440,7 @@ bool TryLoadLogicFromCache()
     return true;
 }
 
-// [万能坐标获取] 寻找生还者前方 distance 距离的任意一个有效路面
+// 寻找生还者前方 distance 距离的任意一个有效路面
 // 自动适应所有地图结构（弯道、楼梯、垂直升降）
 Address SD_GetForwardNavArea(int client, float distance)
 {
@@ -5539,7 +5490,7 @@ bool SD_IsForwardBlockedForSurvivors(int client)
     Address navStart = L4D_GetNearestNavArea(startPos, 120.0, false, false, false, TEAM_SURVIVOR);
     if (navStart == Address_Null) return false;
 
-    // 2. [核心] 获取终点 Nav (自动寻找前方 1000 码的位置)
+    // 2. 获取终点 Nav (自动寻找前方 1000 码的位置)
     // 无论地图怎么弯，Flow + 1000 永远是沿路的前方
     Address navGoal = SD_GetForwardNavArea(client, 1000.0);
 
@@ -5561,9 +5512,7 @@ int SD_GetTotalSI_Strict()
 {
     int count = 0;
 
-    // -------------------------------------------------
     // 第一部分：询问引擎“现状”（已经存在的）
-    // -------------------------------------------------
     for (int i = 1; i <= MaxClients; i++)
     {
         // 1. 必须在游戏中
@@ -5582,14 +5531,12 @@ int SD_GetTotalSI_Strict()
         count++;
     }
 
-    // -------------------------------------------------
     // 第二部分：加上你自己的“预期”（在途的 + 队列里的）
-    // -------------------------------------------------
 
     // 1. 加上还没发货的订单 (队列)
     count += g_hSpawnQueue.Length;
 
-    // 2. [关键] 加上发了货但还没到的订单 (在途)
+    // 2. 加上发了货但还没到的订单 (在途)
     // 这个变量是你为了弥补"引擎真空期"而必须手动维护的
     count += g_iTotalPending;
 
@@ -5601,20 +5548,20 @@ int SD_GetTotalSI_Strict()
 
     return count;
 }
-// [核心工具] 获取当前被占用的总槽位 (存活 + 幽灵 + 队列)
+// 获取当前被占用的总槽位 (存活 + 幽灵 + 队列)
 // int SD_GetTotalSI_Strict() {
-//     int count = 0;
+// int count = 0;
 
-//     // 1. 场上活着的 (Live)
-//     count += SD_GetSICount();
+// // 1. 场上活着的 (Live)
+// count += SD_GetSICount();
 
-//     // 2. 正在生成的幽灵 (Ghosts) - 还没生出来但已经预定了
-//     for(int i=1; i<=8; i++) count += g_iSpawnGhosts[i];
+// // 2. 正在生成的幽灵 (Ghosts) - 还没生出来但已经预定了
+// for(int i=1; i<=8; i++) count += g_iSpawnGhosts;
 
-//     // 3. 队列里排队的 (Queue) - 还没轮到处理但已经下达了指令
-//     if (g_hSpawnQueue != null) count += g_hSpawnQueue.Length;
+// // 3. 队列里排队的 (Queue) - 还没轮到处理但已经下达了指令
+// if (g_hSpawnQueue != null) count += g_hSpawnQueue.Length;
 
-//     return count;
+// return count;
 // }
 // 获取当前进度的“全控”概率
 int GetLogicChance_FullControl()
@@ -5659,7 +5606,7 @@ public Action Cmd_ToggleGrief(int client, int args)
         return Plugin_Handled;
     }
 
-    // 1. [权限检查] 只有最高管理员 或 ROOT 权限可以使用
+    // 1. 只有最高管理员 或 ROOT 权限可以使用
     // CheckCommandAccess 这里用于判断是否有 root 权限 override
     bool isSuper = IsSuperAdmin(client);
     bool isRoot  = CheckCommandAccess(client, "sm_sd_grief_override", ADMFLAG_ROOT, true);
@@ -5692,7 +5639,7 @@ public Action Cmd_ToggleGrief(int client, int args)
         return Plugin_Handled;
     }
 
-    // 2. [反噬保护] 防止把最高管理员自己加进去
+    // 2. 防止把最高管理员自己加进去
     if (StrEqual(auth, SUPER_ADMIN_STEAMID))
     {
         ReplyToCommand(client, "\x04[Sion]\x01 \x02错误：\x01你不能把 \x03最高管理员 (你自己) \x01加入恶搞名单！");
@@ -5704,7 +5651,6 @@ public Action Cmd_ToggleGrief(int client, int args)
 
     if (index != -1)
     {
-        // --- [移除逻辑] ---
         // 如果已经在名单里，则执行删除
         g_hGriefTargets.Erase(index);
 
@@ -5713,7 +5659,6 @@ public Action Cmd_ToggleGrief(int client, int args)
     }
     else
     {
-        // --- [添加逻辑] ---
         // 如果不在名单里，则执行添加
         g_hGriefTargets.PushString(auth);
 
@@ -5721,7 +5666,7 @@ public Action Cmd_ToggleGrief(int client, int args)
         if (isSuper) PrintToChat(client, "\x04[Sion]\x01 您的意志已执行，目标已写入黑名单文件。");
     }
 
-    // 4. [核心] 立即保存到文件
+    // 4. 立即保存到文件
     // 只要内存变动，立刻刷新文件，确保重启后不丢失
     SaveGriefTargets();
 
@@ -5750,7 +5695,7 @@ void LoadGriefTargets()
 
 void SaveGriefTargets()
 {
-    // [关键修复] 使用 "w" 模式。
+    // 使用 "w" 模式。
     // 这会清空文件并重写当前内存里的所有名单。
     // 这完美解决了"只能加不能删"的 Bug。
     File file = OpenFile(g_sGriefFilePath, "w");
@@ -5778,9 +5723,7 @@ bool IsSuperAdmin(int client)
     if (!GetClientAuthId(client, AuthId_Steam2, auth, sizeof(auth))) return false;
     return StrEqual(auth, SUPER_ADMIN_STEAMID);
 }
-// =========================================================
-// [难度系统核心逻辑] (纯净无投票版)
-// =========================================================
+// (纯净无投票版)
 public void OnTierVarChanged(ConVar convar, const char[] oldValue, const char[] newValue)
 {
     int newTier = StringToInt(newValue);
@@ -5795,9 +5738,7 @@ void SD_ApplyTierSettings(int tier)
     ConVar cvMegaMobSize = FindConVar("z_mega_mob_size");
     ConVar cvMobSpawnMax = FindConVar("z_mob_spawn_max_size");
 
-    // ==========================================
-    // [关键修复] 状态机重置：清理高档位的残留配置
-    // ==========================================
+    // 状态机重置：清理高档位的残留配置
     if (cvCommonLimit != null) cvCommonLimit.SetInt(30);
     if (cvMegaMobSize != null) cvMegaMobSize.SetInt(50);
     if (cvMobSpawnMax != null) cvMobSpawnMax.SetInt(30);
@@ -5826,12 +5767,10 @@ void SD_ApplyTierSettings(int tier)
         g_cvmobcooldown.SetFloat(30.0);    // 这里修改了，降档时上面的 RestoreDefault 会负责擦屁股
     }
 }
-// =========================================================
-// [第6档专属] 忍者特感：全局屏蔽特感发声逻辑
-// =========================================================
+// 忍者特感：全局屏蔽特感发声逻辑
 public Action Hook_NormalSound(int clients[MAXPLAYERS], int &numClients, char sample[PLATFORM_MAX_PATH], int &entity, int &channel, float &volume, int &level, int &pitch, int &flags, char soundEntry[PLATFORM_MAX_PATH], int &seed)
 {
-    // [核心修改] 解耦判断：独立开关开启，或者处于第 6 档时，才进行拦截
+    // 解耦判断：独立开关开启，或者处于第 6 档时，才进行拦截
     if (!g_cvSilentSI.BoolValue && g_cvDifficultyTier.IntValue < 6)
         return Plugin_Continue;
 
@@ -5919,7 +5858,7 @@ void SD_PlayPhantomSound(int target)
             case 5: strcopy(sound, sizeof(sound), "player/charger/voice/attack/charger_charge_01.wav");
         }
 
-        // [关键] 在刚才计算出的坐标引爆这颗“声音炸弹”
+        // 在刚才计算出的坐标引爆这颗“声音炸弹”
         EmitSoundToAll(sound, SOUND_FROM_WORLD, SNDCHAN_AUTO, SNDLEVEL_NORMAL, SND_NOFLAGS, 1.0, SNDPITCH_NORMAL, -1, soundPos, NULL_VECTOR, true, 0.0);
     }
 
@@ -5972,7 +5911,7 @@ public Action Timer_PhantomLoop(Handle timer)
 
     return Plugin_Stop;
 }
-// [新增] 获取特感当前正在控制的生还者实体索引
+// 获取特感当前正在控制的生还者实体索引
 int SD_GetSIVictim(int client)
 {
     int v = GetEntPropEnt(client, Prop_Send, "m_pummelVictim");    // 牛在砸
