@@ -1,0 +1,40 @@
+"Games"
+{
+	"left4dead2"
+	{
+		"MemPatches"
+		{
+			"CDirector::GetMaxPlayerZombies"
+			{
+				"signature"	"CDirector::GetMaxPlayerZombies"
+
+				// return 31;
+
+				"linux"
+				{
+					"offset"	"0"
+					"verify"	"\x55"
+					"patch"		"\x55\xB8\x1F\x00\x00\x00\x89\xE5\x5D\xC3"
+				}
+
+				"windows"
+				{
+					"offset"	"0"
+					"verify"	"\x55"
+					"patch"		"\x55\xB8\x1F\x00\x00\x00\x89\xE5\x5D\xC3"
+				}
+			}
+		}
+
+		"Signatures"
+		{
+			"CDirector::GetMaxPlayerZombies"
+			{
+				"library"   "server"
+				"linux"     "@_ZNK9CDirector19GetMaxPlayerZombiesEv"
+				"windows"   "\x55\x8B\xEC\x51\x56\x8B\xF1\x8B\x8E\x48\x06\x00\x00\x8D\x45\xFC\x50\xE8"
+				// 55 8B EC 51 56 8B F1 8B 8E 48 06 00 00 8D 45 FC 50 E8
+			}
+		}
+	}
+}
