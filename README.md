@@ -1,26 +1,68 @@
-# Smart Director stable
+﻿# Smart Director
 
-Left 4 Dead 2 特感导演插件，使用 Nav Flow 和规则选点管理特感进攻。
+基于 CPU NNUE 神经网络的 Left 4 Dead 2 特感导演。网络结合生还者状态、地图进度、特感类型和候选位置，为生成点排序。
+
+## 神经网络选点
+
+核心想法是让网络学习“当前局面下，哪里更值得进攻”。Director 先决定特感类型，Nav 提供候选位置，NNUE 批量评分，再按分数从高到低尝试生成。
+
+默认网络为 `106 → 256 → 32 → 1`。同批候选共享大部分局面信息，CPU 后端复用第一层累加结果，只为各候选补充位置差异；批内去重和评分缓存进一步减少重复计算。
+
+碰撞、视线和路径负责判断位置能否生成，NNUE 负责判断优先尝试哪里。这样可以先对一批候选做低成本评分，再按需执行引擎查询。学习目标是提高进攻收益，例如伤害、有效控制和阻止生还者推进。
+
+## 当前不足与后续方向
+
+目前主要完成了 NNUE 的模型加载、批量评分和生成接入。因为没时间，训练管线和训练数据采集插件还没有写，也没有随仓库提供训练好的权重。
+
+- 先从对抗比赛数据和采集插件积累训练集，学习每一波的生成位置、造成的伤害，以及阻止生还者推进的收益；之后再加入终局监督。
+- 106 维输入是第一版设计，不是最优特征。血量、控制、阵形和位置的表示还可以调整，也需要重新考虑哪些输入适合增量更新。
+- 网络可以尝试扩大到 `106 → 512 → 64 → 1`，比较容量增加后的效果和延迟。
+- CPU 后端可以增加 AVX/AVX2 等 SIMD 优化，加速特征累加和 dense 层，并保留普通实现以兼容不同服务器 CPU。
+
+训练目标、数据采集与输入设计见 [NNUE.md](NNUE.md)。
 
 ## 功能
 
-- 根据队伍状态和地图进度选择进攻目标与生成区域。
-- 使用生成队列、特感配额、补充冷却和半数生成限制安排刷怪。
-- 检查生成距离、视线、碰撞和 Nav 路径，支持引擎选点回退。
+- 使用 Nav Flow 分桶搜索生成区域。
+- 根据生还者位置、血量和控制状态选择进攻目标。
+- 通过生成队列、特感配额和补充冷却控制刷怪节奏。
 - 提供六档难度、Tank 控制、尸潮联动和幻听音效。
-- 自动清理落后或停滞的特感，为新生成的特感保留保护期。
-- 提供 Nav 缓存、Flow 可视化和管理员调试命令。
+- 清理落后或长时间停滞的特感，为新生成的特感保留保护期。
+- 使用 CPU NNUE 批量评估普通特感的候选位置，依次检查碰撞、视线和路径后生成；候选不可用时交给引擎选点。
+
+## 版本
+
+| 分支 | 选点方式 | 额外依赖 |
+| --- | --- | --- |
+| `main` | NNUE 候选排序与引擎选点 | NNUE 扩展、模型权重 |
+| `stable` | Nav 规则选点与引擎选点 | 无 |
 
 ## 编译与安装
 
-需要 SourceMod 1.12、SDKTools、SDKHooks、Left4DHooks、SourceScramble，以及 `gamedata/function_data.txt` 中的补丁配置。
+插件需要 SourceMod 1.12、SDKTools、SDKHooks、Left4DHooks、SourceScramble，以及 `gamedata/function_data.txt` 中的 `CDirector::GetMaxPlayerZombies` 补丁配置。
 
 ```bash
+mkdir -p compiled
 "<SourceMod scripting>/spcomp.exe" smart_director.sp \
-  -i"<SourceMod scripting>/include" -o"smart_director.smx"
+  -i"include" -i"<SourceMod scripting>/include" \
+  -o"compiled/smart_director.smx"
+
+cmake -S extension -B extension/build \
+  -G "Visual Studio 17 2022" -A Win32 \
+  -DSOURCEMOD_ROOT="<SourceMod 源码>"
+cmake --build extension/build --config Release
 ```
 
-将 `smart_director.smx` 放入服务端 `addons/sourcemod/plugins/`，将 `gamedata/function_data.txt` 放入 `addons/sourcemod/gamedata/`。
+以上命令使用 Windows Git Bash。扩展使用 Visual Studio 2022、CMake 和已初始化子模块的 SourceMod 源码，默认构建 Win32。插件依赖的 include 放在 SourceMod scripting 目录的 `include` 中。
+
+将以下文件放入服务端：
+
+| 文件 | 目标目录 |
+| --- | --- |
+| `gamedata/function_data.txt` | `addons/sourcemod/gamedata/` |
+| `compiled/smart_director.smx` | `addons/sourcemod/plugins/` |
+| `extension/build/Release/sd_nnue.ext.dll` | `addons/sourcemod/extensions/` |
+| `nnue_weights.bin` | `addons/sourcemod/data/smart_director/` |
 
 ## 常用配置
 
@@ -35,11 +77,9 @@ Left 4 Dead 2 特感导演插件，使用 Nav Flow 和规则选点管理特感�
 | `sd_enable_tank_control` | 1 | 接管 Tank 生成 |
 | `sd_silent_si` | 0 | 屏蔽特感叫声 |
 
-管理员命令包括 `sm_sd_force_spawn`、`sm_sd_force_tank`、`sm_sd_rebuild_nav`、`sm_nd` 和 `sm_nd_flow`。
+管理员可使用 `sm_sd_force_spawn`、`sm_sd_force_tank` 和 `sm_sd_rebuild_nav` 调试生成，使用 `sm_sd_nnue_status` 查看 NNUE 状态，使用 `sm_sd_nnue_reload` 重载模型。
 
-## 版本
-
-`stable` 使用纯规则选点，无需模型或 NNUE 扩展；`main` 提供 CPU NNUE 候选排序。
+NNUE 配置与模型格式见 [NNUE.md](NNUE.md)。
 
 ## 致谢与许可
 

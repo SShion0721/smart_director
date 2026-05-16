@@ -1,0 +1,19 @@
+# Build outputs
+compiled/
+*.smx
+extension/build/
+*.dll
+*.pdb
+*.lib
+*.exp
+*.ilk
+*.obj
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+.vs/
+
+# Model weights
+*.pt
+*.ckpt
+data/smart_director/*.bin
