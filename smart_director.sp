@@ -16,8 +16,11 @@
 // 实现按职责拆开；include 顺序就是原来的执行顺序。
 #include "smart_director/config.inc"
 #include "smart_director/api.inc"
-#include "smart_director/nav_cache.inc"
-#include "smart_director/lifecycle.inc"
+#include "smart_director/nav_cache_build.inc"
+#include "smart_director/nav_cache_io.inc"
+#include "smart_director/nav_helpers.inc"
+#include "smart_director/lifecycle_setup.inc"
+#include "smart_director/lifecycle_run.inc"
 #include "smart_director/state_spawn.inc"
 #include "smart_director/waves_debug.inc"
 #include "smart_director/logic_admin.inc"
